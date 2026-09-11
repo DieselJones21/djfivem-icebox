@@ -75,7 +75,7 @@ Config.ServerDistanceBuffer = 2.5
 
 --- Player GetEntityCoords is at the body, CreatePed uses the feet. Subtract this in interiors.
 --- Do not use PlacePedOnGroundProperly inside MLOs — it drops peds through the floor.
-Config.PedZOffset = 1.0
+Config.PedZOffset = 0.0
 
 Config.Inventory = {
     vaultId = 'icebox_vault',
@@ -116,7 +116,7 @@ Config.Locations = {
     },
     workshop = {
         coords = vec3(-606.56, -270.48, 37.04),
-        radius = 1.8,
+        radius = 2.2,
     },
     vault = {
         coords = vec3(-613.40, -264.24, 36.38),
@@ -130,14 +130,14 @@ Config.Locations = {
         enabled = true,
         model = `s_f_y_shop_mid`,
         coords = vec4(-613.11, -258.72, 36.38, 293.67),
-        zOffset = 1.0,
+        zOffset = 0.0,
         scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
     },
     fence = {
         enabled = true,
         model = `s_m_y_dealer_01`,
         coords = vec4(-1471.96, -362.05, 40.13, 215.87),
-        zOffset = 1.0,
+        zOffset = 0.0,
         scenario = 'WORLD_HUMAN_SMOKING',
         blip = {
             enabled = false,

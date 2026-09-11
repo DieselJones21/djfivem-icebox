@@ -1,3 +1,5 @@
+if Icebox.warnDuplicate() then return end
+
 local ox_inventory = exports.ox_inventory
 
 local function notify(src, key, nType, ...)
@@ -228,7 +230,7 @@ local function registerJob()
     exports.qbx_core:CreateJob(Config.JobName, {
         label = Config.JobLabel,
         type = Config.JobType,
-        defaultDuty = false,
+        defaultDuty = true,
         offDutyPay = false,
         grades = grades,
     })

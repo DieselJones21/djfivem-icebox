@@ -13,6 +13,7 @@ ox_lib 'locale'
 
 shared_scripts {
     '@ox_lib/init.lua',
+    'shared/bootstrap.lua',
     'shared/catalog.lua',
     'shared/logic.lua',
     'config.lua',

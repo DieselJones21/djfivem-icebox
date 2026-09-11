@@ -1,3 +1,5 @@
+if Icebox.warnDuplicate() then return end
+
 IceboxNui = IceboxNui or {}
 
 local open = false

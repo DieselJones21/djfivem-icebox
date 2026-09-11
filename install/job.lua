@@ -5,7 +5,7 @@
 ['icebox'] = {
     label = 'Rebel Icebox',
     type = 'business',
-    defaultDuty = false,
+    defaultDuty = true,
     offDutyPay = false,
     grades = {
         [0] = { name = 'Apprentice', payment = 75 },

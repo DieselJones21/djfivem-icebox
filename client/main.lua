@@ -1,3 +1,5 @@
+if Icebox.warnDuplicate() then return end
+
 IceboxSnatch = IceboxSnatch or {}
 
 local busy = false

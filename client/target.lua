@@ -1,3 +1,5 @@
+if Icebox.warnDuplicate() then return end
+
 local zones = {}
 local peds = {}
 
@@ -51,7 +53,10 @@ local function spawnPed(key, data)
     local parsed = IceboxLogic.locationCoords(data)[1]
     if not parsed then return end
     local heading = (data.coords and (data.coords.w or data.coords[4])) or 0.0
-    local zOffset = data.zOffset or Config.PedZOffset or 1.0
+    local zOffset = Config.PedZOffset or 0.0
+    if data.zOffset ~= nil then
+        zOffset = data.zOffset
+    end
     local x, y, z = parsed.x, parsed.y, parsed.z - zOffset
 
     lib.requestModel(data.model)
@@ -136,8 +141,16 @@ local function setupTargets()
             name = 'icebox_workshop',
             icon = 'fa-solid fa-hammer',
             label = 'Icebox Workshop',
-            canInteract = onDuty,
+            canInteract = isIcebox,
             onSelect = function()
+                if Config.RequireDuty and not onDuty() then
+                    lib.notify({
+                        title = Config.Notify.title,
+                        description = locale('duty_required'),
+                        type = 'error',
+                    })
+                    return
+                end
                 IceboxNui.open('workshop')
             end,
         },
@@ -148,8 +161,16 @@ local function setupTargets()
             name = 'icebox_vault',
             icon = 'fa-solid fa-box-open',
             label = 'Icebox Vault',
-            canInteract = onDuty,
+            canInteract = isIcebox,
             onSelect = function()
+                if Config.RequireDuty and not onDuty() then
+                    lib.notify({
+                        title = Config.Notify.title,
+                        description = locale('duty_required'),
+                        type = 'error',
+                    })
+                    return
+                end
                 exports.ox_inventory:openInventory('stash', Config.Inventory.vaultId)
             end,
         },
@@ -157,8 +178,16 @@ local function setupTargets()
             name = 'icebox_showcase',
             icon = 'fa-solid fa-store',
             label = 'Showcase Stock',
-            canInteract = onDuty,
+            canInteract = isIcebox,
             onSelect = function()
+                if Config.RequireDuty and not onDuty() then
+                    lib.notify({
+                        title = Config.Notify.title,
+                        description = locale('duty_required'),
+                        type = 'error',
+                    })
+                    return
+                end
                 exports.ox_inventory:openInventory('stash', Config.Inventory.showcaseId)
             end,
         },

@@ -291,6 +291,12 @@ test('locationCoords reads FiveM vector userdata xyz', () => {
   assert.ok(server.includes('nearStore'));
 });
 
+test('duplicate resource guard exists', () => {
+  const boot = readFileSync(join(root, 'shared/bootstrap.lua'), 'utf8');
+  assert.ok(boot.includes('djfivem-icebox'));
+  assert.ok(boot.includes('duplicateResource'));
+});
+
 test('clerk is outside case radius so store distance is required', () => {
   const clerk = { x: -613.11, y: -258.72, z: 36.38 };
   const caseA = { x: -610.42, y: -251.46, z: 36.38 };

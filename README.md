@@ -39,7 +39,7 @@ Snatched pieces are flagged `hot` and cannot be worn (`Config.Wear.allowHot = fa
 
 ## Install
 
-1. Drop this folder into `resources` as `dj-icebox`.
+1. Drop this folder into `resources` as **`dj-icebox` only**. Do not also start `djfivem-icebox` — two copies spawn double peds and ox_lib callback errors.
 2. Merge `install/job.lua` into `qbx_core/shared/jobs.lua`.
 3. Merge `install/items.lua` into `ox_inventory/data/items.lua`.
 4. Copy `install/images/*.png` into `ox_inventory/web/images/`.
