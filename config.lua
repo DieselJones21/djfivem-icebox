@@ -5,7 +5,7 @@ Config.Debug = false
 
 --- Qbox job id. Must match install/job.lua.
 Config.JobName = 'icebox'
-Config.JobLabel = 'Icebox'
+Config.JobLabel = 'Rebel Icebox'
 Config.JobType = 'business'
 
 --- Clock-in required before workshop / vault / boss actions.
@@ -88,50 +88,53 @@ Config.Society = {
 }
 
 Config.Locations = {
-    --- Rockford Hills storefront. Replace with your Icebox MLO interior coords.
     blip = {
         enabled = true,
-        coords = vec3(-705.64, -151.86, 37.42),
+        coords = vec3(-603.81, -253.49, 36.38),
         sprite = 617,
-        color = 26,
+        color = 1,
         scale = 0.85,
-        label = 'Icebox',
+        label = 'Rebel Icebox',
     },
     duty = {
-        coords = vec3(-704.86, -151.22, 37.42),
+        coords = vec3(-617.88, -256.33, 36.38),
         size = vec3(1.2, 1.2, 2.0),
-        rotation = 30.0,
+        rotation = 294.0,
     },
+    --- Two cases / counters in the store.
     showroom = {
-        coords = vec3(-708.36, -151.27, 37.42),
         size = vec3(1.6, 1.6, 2.2),
-        rotation = 30.0,
+        rotation = 294.0,
+        coords = {
+            vec3(-610.42, -251.46, 36.38),
+            vec3(-605.79, -259.56, 36.38),
+        },
     },
     workshop = {
-        coords = vec3(-710.21, -154.92, 37.42),
+        coords = vec3(-606.56, -270.48, 37.04),
         size = vec3(1.6, 1.6, 2.2),
-        rotation = 30.0,
+        rotation = 294.0,
     },
     vault = {
-        coords = vec3(-709.55, -156.80, 37.42),
+        coords = vec3(-613.40, -264.24, 36.38),
         size = vec3(1.4, 1.4, 2.0),
-        rotation = 30.0,
+        rotation = 294.0,
     },
     boss = {
-        coords = vec3(-707.90, -157.21, 37.42),
+        coords = vec3(-612.18, -261.97, 36.38),
         size = vec3(1.4, 1.4, 2.0),
-        rotation = 30.0,
+        rotation = 294.0,
     },
     clerk = {
         enabled = true,
         model = `s_f_y_shop_mid`,
-        coords = vec4(-705.21, -150.12, 36.42, 119.0),
+        coords = vec4(-613.11, -258.72, 36.38, 293.67),
         scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
     },
     fence = {
         enabled = true,
         model = `s_m_y_dealer_01`,
-        coords = vec4(869.42, -1579.21, 30.84, 93.0),
+        coords = vec4(-1471.96, -362.05, 40.13, 215.87),
         scenario = 'WORLD_HUMAN_SMOKING',
         blip = {
             enabled = false,
@@ -160,6 +163,6 @@ Config.Anims = {
 }
 
 Config.Notify = {
-    title = 'Icebox',
+    title = 'Rebel Icebox',
     position = 'top-right',
 }

@@ -251,7 +251,7 @@ local function registerStashes()
         Config.Inventory.showcaseWeight,
         nil,
         { [Config.JobName] = 0 },
-        Config.Locations.showroom.coords
+        IceboxLogic.locationCoords(Config.Locations.showroom)
     )
 end
 
@@ -305,7 +305,7 @@ lib.callback.register('dj-icebox:server:uiData', function(source, view)
             return fail(source, 'too_far')
         end
     elseif view == 'showroom' then
-        if not IceboxSecurity.near(source, Config.Locations.showroom.coords, Config.Showroom.distance) then
+        if not IceboxSecurity.near(source, Config.Locations.showroom, Config.Showroom.distance) then
             return fail(source, 'too_far')
         end
     elseif view == 'fence' then
@@ -479,7 +479,7 @@ lib.callback.register('dj-icebox:server:buy', function(source, payload)
     if not valid then return fail(source, 'exploit') end
     local ok, ply = IceboxSecurity.player(source)
     if not ok then return { ok = false, reason = 'exploit' } end
-    if not IceboxSecurity.near(source, Config.Locations.showroom.coords, Config.Showroom.distance) then
+    if not IceboxSecurity.near(source, Config.Locations.showroom, Config.Showroom.distance) then
         return fail(source, 'too_far')
     end
     if Config.RequireEmployeeForPurchase then

@@ -231,4 +231,52 @@ test('server rejects unknown pieces and token speedruns', () => {
   assert.ok(server.includes('nearPlayer'));
 });
 
+function locationCoords(loc) {
+  if (!loc || typeof loc !== 'object') return [];
+  if (loc.x != null && loc.y != null && loc.z != null) return [loc];
+  if (loc.coords) return locationCoords(loc.coords);
+  const out = [];
+  for (const item of loc) {
+    if (item?.x != null) out.push(item);
+    else if (item?.coords?.x != null) out.push(item.coords);
+  }
+  return out;
+}
+
+test('showroom accepts two counters', () => {
+  const showroom = {
+    size: { x: 1.6, y: 1.6, z: 2.2 },
+    rotation: 294,
+    coords: [
+      { x: -610.42, y: -251.46, z: 36.38 },
+      { x: -605.79, y: -259.56, z: 36.38 },
+    ],
+  };
+  const points = locationCoords(showroom);
+  assert.equal(points.length, 2);
+  const player = { x: -610.42, y: -251.46, z: 36.38 };
+  assert.equal(withinDistance(player, points[0], 3), true);
+  assert.equal(withinDistance(player, points[1], 3), false);
+  assert.equal(points.some((p) => withinDistance(player, p, 3.5)), true);
+});
+
+test('every catalog item has an inventory and nui image', () => {
+  const names = [...Object.keys(catalog.chains), ...Object.keys(catalog.materials), 'icebox_tester'];
+  for (const name of names) {
+    const inv = join(root, 'install/images', `${name}.png`);
+    const nui = join(root, 'html/assets/items', `${name}.png`);
+    assert.ok(readFileSync(inv).slice(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), inv);
+    assert.ok(readFileSync(nui).slice(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), nui);
+  }
+});
+
+test('config uses rebel coords and dual showroom', () => {
+  const cfg = readFileSync(join(root, 'config.lua'), 'utf8');
+  assert.ok(cfg.includes('-603.81'));
+  assert.ok(cfg.includes('-610.42'));
+  assert.ok(cfg.includes('-605.79'));
+  assert.ok(cfg.includes('-1471.96'));
+  assert.ok(cfg.includes('Rebel Icebox'));
+});
+
 console.log(`\n${passed} tests passed`);

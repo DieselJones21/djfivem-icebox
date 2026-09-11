@@ -151,6 +151,31 @@ function IceboxLogic.snatchDurationValid(elapsed, minDuration)
     return elapsed >= math.floor(minDuration * 0.8)
 end
 
+--- Accepts a vec3, a location table with `.coords`, or a list of vec3/locations.
+---@param loc vector3|table|nil
+---@return table[]
+function IceboxLogic.locationCoords(loc)
+    if type(loc) ~= 'table' then return {} end
+    if loc.x and loc.y and loc.z then
+        return { loc }
+    end
+    if loc.coords then
+        return IceboxLogic.locationCoords(loc.coords)
+    end
+    local out = {}
+    for i = 1, #loc do
+        local item = loc[i]
+        if type(item) == 'table' then
+            if item.x and item.y and item.z then
+                out[#out + 1] = item
+            elseif item.coords and item.coords.x then
+                out[#out + 1] = item.coords
+            end
+        end
+    end
+    return out
+end
+
 ---@param srcCoords vector3|table
 ---@param destCoords vector3|table
 ---@param maxDist number

@@ -2,15 +2,15 @@
   "version": 1,
   "business": {
     "id": "icebox",
-    "label": "Icebox",
-    "tagline": "The coldest jewelry in the city",
+    "label": "Rebel Roleplay Icebox",
+    "tagline": "Los Santos luxury ice",
     "currency": "$"
   },
   "rarities": {
-    "street": { "label": "Street", "rank": 1, "color": "#9aa3b2" },
-    "iced": { "label": "Iced", "rank": 2, "color": "#7ee0ff" },
-    "exclusive": { "label": "Exclusive", "rank": 3, "color": "#d4af77" },
-    "legendary": { "label": "Legendary", "rank": 4, "color": "#f0e6ff" }
+    "street": { "label": "Street", "rank": 1, "color": "#c4b8a8" },
+    "iced": { "label": "Iced", "rank": 2, "color": "#e8b84a" },
+    "exclusive": { "label": "Exclusive", "rank": 3, "color": "#ff5a4a" },
+    "legendary": { "label": "Legendary", "rank": 4, "color": "#ffd27a" }
   },
   "materials": {
     "icebox_gold_bar": { "label": "Gold Bar", "weight": 400 },

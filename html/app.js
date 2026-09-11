@@ -22,6 +22,7 @@
     detailNote: document.getElementById('detailNote'),
     detailActions: document.getElementById('detailActions'),
     glyph: document.getElementById('glyph'),
+    previewImg: document.getElementById('previewImg'),
     viewTitle: document.getElementById('viewTitle'),
     viewEyebrow: document.getElementById('viewEyebrow'),
     jobPill: document.getElementById('jobPill'),
@@ -46,6 +47,10 @@
     legendary: '✧',
   };
 
+  function itemImage(id) {
+    return `assets/items/${id}.png`;
+  }
+
   function money(n) {
     return `$${Number(n || 0).toLocaleString('en-US')}`;
   }
@@ -62,7 +67,7 @@
   function toast(text, kind) {
     els.toast.textContent = text;
     els.toast.classList.remove('hidden');
-    els.toast.style.borderColor = kind === 'error' ? 'rgba(255,139,139,0.5)' : 'rgba(139,231,255,0.4)';
+    els.toast.style.borderColor = kind === 'error' ? 'rgba(255,75,75,0.55)' : 'rgba(232,184,74,0.45)';
     clearTimeout(toast._t);
     toast._t = setTimeout(() => els.toast.classList.add('hidden'), 2800);
   }
@@ -163,7 +168,10 @@
       const rarity = item.rarity || 'street';
       card.innerHTML = `
         <span class="badge">${item.hot ? 'Snatched' : rarity}</span>
-        <div class="mark">${glyphs[rarity] || glyphs[item.category] || '◆'}</div>
+        <div class="thumb">
+          <img src="${itemImage(id)}" alt="${item.label}" onerror="this.style.display='none'; var n=this.nextElementSibling; if(n) n.classList.remove('hidden');" />
+          <div class="mark hidden">${glyphs[rarity] || glyphs[item.category] || '◆'}</div>
+        </div>
         <h4>${item.label}</h4>
         <p>${item.serial ? item.serial : money((item.prices && item.prices.retail) || item.fencePrice || 0)}</p>
       `;
@@ -197,10 +205,25 @@
       els.detailPrice.textContent = '';
       els.detailNote.textContent = '';
       els.detailActions.innerHTML = '';
+      if (els.previewImg) {
+        els.previewImg.classList.add('hidden');
+        els.previewImg.removeAttribute('src');
+      }
+      els.glyph.classList.remove('hidden');
       return;
     }
     const rarity = rarities()[item.rarity] || { label: item.rarity };
     els.glyph.textContent = glyphs[item.rarity] || glyphs[item.category] || '◆';
+    if (els.previewImg) {
+      els.previewImg.src = itemImage(item.id);
+      els.previewImg.alt = item.label;
+      els.previewImg.classList.remove('hidden');
+      els.glyph.classList.add('hidden');
+      els.previewImg.onerror = () => {
+        els.previewImg.classList.add('hidden');
+        els.glyph.classList.remove('hidden');
+      };
+    }
     els.detailRarity.textContent = item.hot ? 'Snatched' : (rarity.label || item.rarity);
     els.detailTitle.textContent = item.label;
     els.detailCopy.textContent = item.description || (item.hot ? 'Hot ice. The quiet buyer will take it off your hands.' : '');

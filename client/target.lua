@@ -16,14 +16,29 @@ local function onDuty()
 end
 
 local function addZone(name, loc, options)
-    if not loc or not loc.coords then return end
-    zones[#zones + 1] = exports.ox_target:addBoxZone({
-        coords = loc.coords,
-        size = loc.size or vec3(1.4, 1.4, 2.0),
-        rotation = loc.rotation or 0.0,
-        debug = Config.Debug,
-        options = options,
-    })
+    if not loc then return end
+    local points = IceboxLogic.locationCoords(loc)
+    if #points == 0 then return end
+    for i = 1, #points do
+        local cloned = {}
+        for index, opt in ipairs(options) do
+            local copy = {}
+            for k, v in pairs(opt) do
+                copy[k] = v
+            end
+            if copy.name then
+                copy.name = ('%s_%s'):format(copy.name, i)
+            end
+            cloned[index] = copy
+        end
+        zones[#zones + 1] = exports.ox_target:addBoxZone({
+            coords = points[i],
+            size = loc.size or vec3(1.4, 1.4, 2.0),
+            rotation = loc.rotation or 0.0,
+            debug = Config.Debug,
+            options = cloned,
+        })
+    end
 end
 
 local function spawnPed(key, data)

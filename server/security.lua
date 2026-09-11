@@ -63,9 +63,18 @@ end
 function IceboxSecurity.near(src, coords, distance)
     local pcoords = playerCoords(src)
     if not pcoords or not coords then return false end
-    local dest = coords.xyz and coords.xyz or coords
+    local list = IceboxLogic.locationCoords(coords)
+    if #list == 0 then
+        local dest = coords.xyz and coords.xyz or coords
+        list = { dest }
+    end
     local maxDist = (distance or 3.0) + (Config.ServerDistanceBuffer or 0.0)
-    return IceboxLogic.withinDistance(pcoords, dest, maxDist)
+    for i = 1, #list do
+        if IceboxLogic.withinDistance(pcoords, list[i], maxDist) then
+            return true
+        end
+    end
+    return false
 end
 
 ---@param src integer

@@ -3,7 +3,7 @@
 -- The resource also registers this job at runtime via CreateJob (does not persist across core restarts unless added here).
 
 ['icebox'] = {
-    label = 'Icebox',
+    label = 'Rebel Icebox',
     type = 'business',
     defaultDuty = false,
     offDutyPay = false,

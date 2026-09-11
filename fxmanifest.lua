@@ -38,6 +38,7 @@ files {
     'html/style.css',
     'html/app.js',
     'html/assets/*.svg',
+    'html/assets/items/*.png',
     'locales/*.json',
     'data/catalog.json',
 }

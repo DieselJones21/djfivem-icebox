@@ -1,8 +1,6 @@
 # Icebox (`dj-icebox`)
 
-Qbox jewelry business for **Icebox**. Employees craft and sell chains. Anyone can wear a piece, get it snatched, and dump hot ice with a quiet buyer.
-
-Built for **qbx_core**, **ox_lib**, **ox_inventory**, and **ox_target**.
+Rebel Roleplay jewelry business for **qbx_core**, **ox_lib**, **ox_inventory**, and **ox_target**.
 
 ## What you get
 
@@ -44,14 +42,22 @@ Snatched pieces are flagged `hot` and cannot be worn (`Config.Wear.allowHot = fa
 1. Drop this folder into `resources` as `dj-icebox`.
 2. Merge `install/job.lua` into `qbx_core/shared/jobs.lua`.
 3. Merge `install/items.lua` into `ox_inventory/data/items.lua`.
-4. Copy `install/images/*.png` into `ox_inventory/web/images/` (optional).
+4. Copy `install/images/*.png` into `ox_inventory/web/images/`.
 5. Add to `server.cfg` **after** ox_lib, qbx_core, ox_inventory, ox_target:
 
 ```cfg
 ensure dj-icebox
 ```
 
-6. Set `Config.Locations` in `config.lua` to your Icebox MLO / storefront. Defaults are a Rockford Hills placeholder.
+6. Store coords are already set for Rebel Icebox:
+   - blip `-603.81, -253.49, 36.38`
+   - duty `-617.88, -256.33, 36.38`
+   - showroom `-610.42, -251.46, 36.38` and `-605.79, -259.56, 36.38`
+   - workshop `-606.56, -270.48, 37.04`
+   - vault `-613.40, -264.24, 36.38`
+   - boss `-612.18, -261.97, 36.38`
+   - clerk `-613.11, -258.72, 36.38, 293.67`
+   - fence `-1471.96, -362.05, 40.13, 215.87`
 7. Restart `ox_inventory` then `dj-icebox`.
 
 Society payouts auto-detect `Renewed-Banking`, `qb-banking`, or `fd_banking`. Boss menu uses `qbx_management` when it is started.
