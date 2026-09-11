@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rebel Roleplay Icebox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="hidden" data-view="showroom">
+    <div class="frost"></div>
+    <aside class="rail">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="Rebel Icebox" class="logo" />
+        <div>
+          <p class="eyebrow">Rebel Roleplay</p>
+          <h1>ICEBOX</h1>
+          <p class="tagline">Los Santos luxury ice</p>
+        </div>
+      </div>
+      <nav id="nav">
+        <button class="nav-btn active" data-view="showroom">
+          <span>Showroom</span>
+          <small>Retail ice</small>
+        </button>
+        <button class="nav-btn" data-view="workshop" data-employee="true">
+          <span>Workshop</span>
+          <small>Craft & infuse</small>
+        </button>
+        <button class="nav-btn" data-view="owned">
+          <span>My Pieces</span>
+          <small>Wear & manage</small>
+        </button>
+        <button class="nav-btn" data-view="fence" data-fence="true">
+          <span>Quiet Buyer</span>
+          <small>Snatched only</small>
+        </button>
+      </nav>
+      <div class="equipped" id="equipped">
+        <p class="eyebrow">On you</p>
+        <div class="equipped-row" data-slot="chain">No chain</div>
+        <div class="equipped-row" data-slot="watch">No watch</div>
+      </div>
+      <div class="job-pill" id="jobPill">Civilian</div>
+    </aside>
+
+    <main class="stage">
+      <header class="top">
+        <div>
+          <p class="eyebrow" id="viewEyebrow">Showroom</p>
+          <h2 id="viewTitle">Pick your ice</h2>
+        </div>
+        <div class="top-actions">
+          <div class="filters" id="filters"></div>
+          <button class="close-btn" id="closeBtn" type="button">Close</button>
+        </div>
+      </header>
+
+      <section class="grid-wrap">
+        <div class="cards" id="cards"></div>
+        <article class="detail" id="detail">
+          <div class="preview" id="preview">
+            <div class="orb"></div>
+            <img class="preview-img hidden" id="previewImg" alt="" />
+            <div class="chain-glyph" id="glyph">◆</div>
+          </div>
+          <p class="rarity" id="detailRarity">Iced</p>
+          <h3 id="detailTitle">Select a piece</h3>
+          <p class="copy" id="detailCopy">Browse the case. Every piece is serialized at the bench.</p>
+          <ul class="meta" id="detailMeta"></ul>
+          <div class="price-row">
+            <span class="price" id="detailPrice">$0</span>
+            <span class="price-note" id="detailNote"></span>
+          </div>
+          <div class="actions" id="detailActions"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>
