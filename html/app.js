@@ -192,6 +192,10 @@
     if (!item) {
       els.detailTitle.textContent = 'Select a piece';
       els.detailCopy.textContent = 'Browse the case.';
+      els.detailRarity.textContent = '';
+      els.detailMeta.innerHTML = '';
+      els.detailPrice.textContent = '';
+      els.detailNote.textContent = '';
       els.detailActions.innerHTML = '';
       return;
     }
@@ -396,8 +400,17 @@
       return Promise.resolve({ ok: true, owned: DEMO_OWNED });
     }
     if (name === 'toggleWear') {
-      DEMO_OWNED.forEach((p) => { p.worn = p.id === payload.id ? !p.worn : false; });
-      return Promise.resolve({ ok: true, action: 'equip', wear: { chain: payload.id, watch: null }, owned: DEMO_OWNED });
+      const piece = DEMO_OWNED.find((p) => p.id === payload.id);
+      const nextWorn = piece ? !piece.worn : true;
+      DEMO_OWNED.forEach((p) => {
+        p.worn = p.id === payload.id ? nextWorn : false;
+      });
+      return Promise.resolve({
+        ok: true,
+        action: nextWorn ? 'equip' : 'unequip',
+        wear: { chain: nextWorn ? payload.id : null, watch: null },
+        owned: DEMO_OWNED,
+      });
     }
     if (name === 'fence') {
       const left = DEMO_OWNED.filter((p) => !payload.serials.includes(p.serial));
