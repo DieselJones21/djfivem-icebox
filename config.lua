@@ -45,16 +45,18 @@ Config.Fence = {
     maxPerTrip = 5,
 }
 
+Config.Showroom = {
+    --- Per-case target radius. Catalog/buy also allow the clerk and the rest of the store.
+    distance = 4.0,
+    storeDistance = 16.0,
+    maxBuy = 1,
+}
+
 Config.Craft = {
-    distance = 3.0,
+    distance = 4.0,
     --- Hard cap so a stalled progress bar cannot be completed instantly by a cheater.
     minDurationMs = 2500,
     maxQueue = 1,
-}
-
-Config.Showroom = {
-    distance = 3.0,
-    maxBuy = 1,
 }
 
 Config.RateLimits = {
@@ -69,7 +71,11 @@ Config.RateLimits = {
 }
 
 --- Interaction radius used for every server distance check (added on top of location distance).
-Config.ServerDistanceBuffer = 1.5
+Config.ServerDistanceBuffer = 2.5
+
+--- Player GetEntityCoords is at the body, CreatePed uses the feet. Subtract this in interiors.
+--- Do not use PlacePedOnGroundProperly inside MLOs — it drops peds through the floor.
+Config.PedZOffset = 1.0
 
 Config.Inventory = {
     vaultId = 'icebox_vault',
@@ -98,13 +104,11 @@ Config.Locations = {
     },
     duty = {
         coords = vec3(-617.88, -256.33, 36.38),
-        size = vec3(1.2, 1.2, 2.0),
-        rotation = 294.0,
+        radius = 1.6,
     },
     --- Two cases / counters in the store.
     showroom = {
-        size = vec3(1.6, 1.6, 2.2),
-        rotation = 294.0,
+        radius = 1.8,
         coords = {
             vec3(-610.42, -251.46, 36.38),
             vec3(-605.79, -259.56, 36.38),
@@ -112,29 +116,28 @@ Config.Locations = {
     },
     workshop = {
         coords = vec3(-606.56, -270.48, 37.04),
-        size = vec3(1.6, 1.6, 2.2),
-        rotation = 294.0,
+        radius = 1.8,
     },
     vault = {
         coords = vec3(-613.40, -264.24, 36.38),
-        size = vec3(1.4, 1.4, 2.0),
-        rotation = 294.0,
+        radius = 1.6,
     },
     boss = {
         coords = vec3(-612.18, -261.97, 36.38),
-        size = vec3(1.4, 1.4, 2.0),
-        rotation = 294.0,
+        radius = 1.6,
     },
     clerk = {
         enabled = true,
         model = `s_f_y_shop_mid`,
         coords = vec4(-613.11, -258.72, 36.38, 293.67),
+        zOffset = 1.0,
         scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
     },
     fence = {
         enabled = true,
         model = `s_m_y_dealer_01`,
         coords = vec4(-1471.96, -362.05, 40.13, 215.87),
+        zOffset = 1.0,
         scenario = 'WORLD_HUMAN_SMOKING',
         blip = {
             enabled = false,

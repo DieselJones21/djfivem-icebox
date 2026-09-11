@@ -277,6 +277,27 @@ test('config uses rebel coords and dual showroom', () => {
   assert.ok(cfg.includes('-605.79'));
   assert.ok(cfg.includes('-1471.96'));
   assert.ok(cfg.includes('Rebel Icebox'));
+  assert.ok(cfg.includes('PedZOffset'));
+  assert.ok(cfg.includes('storeDistance'));
+});
+
+test('locationCoords reads FiveM vector userdata xyz', () => {
+  const lua = readFileSync(join(root, 'shared/logic.lua'), 'utf8');
+  assert.ok(lua.includes('userdata'));
+  assert.ok(lua.includes("v.x or (type(v) == 'table' and v[1])"));
+  const client = readFileSync(join(root, 'client/target.lua'), 'utf8');
+  assert.ok(client.includes('addSphereZone'));
+  const server = readFileSync(join(root, 'server/main.lua'), 'utf8');
+  assert.ok(server.includes('nearStore'));
+});
+
+test('clerk is outside case radius so store distance is required', () => {
+  const clerk = { x: -613.11, y: -258.72, z: 36.38 };
+  const caseA = { x: -610.42, y: -251.46, z: 36.38 };
+  const caseB = { x: -605.79, y: -259.56, z: 36.38 };
+  assert.equal(withinDistance(clerk, caseA, 4.5), false);
+  assert.equal(withinDistance(clerk, caseB, 4.5), false);
+  assert.equal(withinDistance(clerk, caseB, 16), true);
 });
 
 console.log(`\n${passed} tests passed`);
