@@ -151,26 +151,34 @@ function IceboxLogic.snatchDurationValid(elapsed, minDuration)
     return elapsed >= math.floor(minDuration * 0.8)
 end
 
---- Accepts a vec3, a location table with `.coords`, or a list of vec3/locations.
----@param loc vector3|table|nil
+local function coordXYZ(v)
+    if v == nil then return nil end
+    --- FiveM vector3/vector4 are userdata (`type() == 'vector3'`), not tables.
+    local x = tonumber(v.x or (type(v) == 'table' and v[1]))
+    local y = tonumber(v.y or (type(v) == 'table' and v[2]))
+    local z = tonumber(v.z or (type(v) == 'table' and v[3]))
+    if not x or not y or not z then return nil end
+    return { x = x, y = y, z = z }
+end
+
+--- Accepts a vec3/vec4 (userdata or table), a location with `.coords`, or a list of those.
+---@param loc vector3|vector4|table|nil
 ---@return table[]
 function IceboxLogic.locationCoords(loc)
+    local single = coordXYZ(loc)
+    if single then return { single } end
     if type(loc) ~= 'table' then return {} end
-    if loc.x and loc.y and loc.z then
-        return { loc }
-    end
-    if loc.coords then
+    if loc.coords ~= nil then
         return IceboxLogic.locationCoords(loc.coords)
     end
     local out = {}
     for i = 1, #loc do
-        local item = loc[i]
-        if type(item) == 'table' then
-            if item.x and item.y and item.z then
-                out[#out + 1] = item
-            elseif item.coords and item.coords.x then
-                out[#out + 1] = item.coords
-            end
+        local parsed = coordXYZ(loc[i])
+        if not parsed and type(loc[i]) == 'table' and loc[i].coords then
+            parsed = coordXYZ(loc[i].coords)
+        end
+        if parsed then
+            out[#out + 1] = parsed
         end
     end
     return out
@@ -193,6 +201,18 @@ function IceboxLogic.withinDistance(srcCoords, destCoords, maxDist)
     end
     local dist = math.sqrt((sx - dx) ^ 2 + (sy - dy) ^ 2 + (sz - dz) ^ 2)
     return dist <= maxDist
+end
+
+function IceboxLogic.storeLocations()
+    return {
+        Config.Locations.blip,
+        Config.Locations.duty,
+        Config.Locations.showroom,
+        Config.Locations.workshop,
+        Config.Locations.vault,
+        Config.Locations.boss,
+        Config.Locations.clerk,
+    }
 end
 
 function IceboxLogic.newSerial(prefix)

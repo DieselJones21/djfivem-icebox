@@ -65,12 +65,27 @@ function IceboxSecurity.near(src, coords, distance)
     if not pcoords or not coords then return false end
     local list = IceboxLogic.locationCoords(coords)
     if #list == 0 then
-        local dest = coords.xyz and coords.xyz or coords
-        list = { dest }
+        local dest = IceboxLogic.locationCoords({ coords })[1] or coords
+        list = IceboxLogic.locationCoords(dest)
+        if #list == 0 then
+            list = { dest }
+        end
     end
     local maxDist = (distance or 3.0) + (Config.ServerDistanceBuffer or 0.0)
     for i = 1, #list do
         if IceboxLogic.withinDistance(pcoords, list[i], maxDist) then
+            return true
+        end
+    end
+    return false
+end
+
+--- Catalog / clerk: anywhere inside the shop, not only on top of a case.
+function IceboxSecurity.nearStore(src)
+    local dist = (Config.Showroom.storeDistance or 16.0)
+    local spots = IceboxLogic.storeLocations()
+    for i = 1, #spots do
+        if IceboxSecurity.near(src, spots[i], dist) then
             return true
         end
     end
