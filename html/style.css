@@ -291,6 +291,7 @@ body.demo {
   color: #fff;
   border: 0;
   font-weight: 700;
+  white-space: nowrap;
 }
 .action.danger { border-color: rgba(255,75,75,0.5); color: var(--danger); }
 .action:disabled { opacity: 0.45; cursor: not-allowed; }

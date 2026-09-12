@@ -364,9 +364,9 @@
     if (item.serial) rows.push(['Serial', item.serial]);
     if (item.infusion) rows.push(['Infusion', item.infusion.replace('icebox_', '')]);
     if (state.view === 'showroom') rows.push(['In showcase', String(stockOf(item.id))]);
-    if (item.ingredients) {
+    if (item.ingredients && state.view === 'workshop') {
       const counts = materials();
-      const qty = state.view === 'workshop' ? clampQty() : 1;
+      const qty = clampQty();
       rows.push(['Materials', item.ingredients.map((i) => {
         const need = i.count * qty;
         const have = Number(counts[i.item] || 0);
@@ -406,10 +406,10 @@
       const job = state.data && state.data.job;
       const locked = job && item.gradeRequired > (job.grade || 0);
       addQtyRow();
-      addAction(locked ? 'Grade too low' : `Craft ${qty > 1 ? `${qty}× ` : ''}from mats`, 'primary', () => craft(item, false), locked || state.crafting);
+      addAction(locked ? 'Grade too low' : (qty > 1 ? `Craft ${qty}×` : 'Craft from mats'), 'primary', () => craft(item, false), locked || state.crafting);
       if (rushEnabled()) {
         const rush = (item.prices && item.prices.rush) || 0;
-        addAction(`Rush (no mats) ${money(rush * qty)}`, '', () => craft(item, true), locked || state.crafting);
+        addAction(`Rush ${money(rush * qty)}`, '', () => craft(item, true), locked || state.crafting);
       }
       const infusions = state.data && state.data.infusions ? Object.keys(state.data.infusions) : [];
       infusions.forEach((inf) => {
@@ -608,6 +608,8 @@
     icebox_polish: 3,
   };
 
+  let lastCraftCount = 1;
+
   function mock(name, payload) {
     if (name === 'close') return Promise.resolve({ ok: true });
     if (name === 'buy') {
@@ -622,10 +624,14 @@
       DEMO_MATERIALS[item] = (DEMO_MATERIALS[item] || 0) + (payload.count || 1);
       return Promise.resolve({ ok: true, materials: { ...DEMO_MATERIALS } });
     }
-    if (name === 'craftStart') return Promise.resolve({ ok: true, token: 'demo', duration: 1200, label: payload.id, count: payload.count || 1 });
+    if (name === 'craftStart') {
+      lastCraftCount = payload.count || 1;
+      const duration = 800 + lastCraftCount * 400;
+      return Promise.resolve({ ok: true, token: 'demo', duration, label: payload.id, count: lastCraftCount });
+    }
     if (name === 'craftFinish') {
       toast('Demo craft complete');
-      return Promise.resolve({ ok: true, owned: DEMO_OWNED, count: 1, materials: { ...DEMO_MATERIALS } });
+      return Promise.resolve({ ok: true, owned: DEMO_OWNED, count: lastCraftCount, materials: { ...DEMO_MATERIALS } });
     }
     if (name === 'toggleWear') {
       const piece = DEMO_OWNED.find((p) => p.id === payload.id);
