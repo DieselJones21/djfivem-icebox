@@ -18,6 +18,7 @@ local function loadCatalog()
     IceboxCatalog.materials = decoded.materials
     IceboxCatalog.rarities = decoded.rarities
     IceboxCatalog.infusions = decoded.infusions
+    IceboxCatalog.collections = decoded.collections or {}
     IceboxCatalog.fence = decoded.fence
     IceboxCatalog.commissionPercent = decoded.commissionPercent or 0.12
     IceboxCatalog.societyPercent = decoded.societyPercent or 0.88

@@ -45,6 +45,16 @@ RegisterNUICallback('craftStart', function(data, cb)
     cb(result or { ok = false })
 end)
 
+RegisterNUICallback('craftPickup', function(data, cb)
+    local result = lib.callback.await('dj-icebox:server:craftPickup', false, data)
+    cb(result or { ok = false })
+end)
+
+RegisterNUICallback('craftExpedite', function(data, cb)
+    local result = lib.callback.await('dj-icebox:server:craftExpedite', false, data)
+    cb(result or { ok = false })
+end)
+
 RegisterNUICallback('craftFinish', function(data, cb)
     local result = lib.callback.await('dj-icebox:server:craftFinish', false, data)
     cb(result or { ok = false })

@@ -3,23 +3,67 @@
   "business": {
     "id": "icebox",
     "label": "Rebel Roleplay Icebox",
-    "tagline": "Los Santos luxury ice",
+    "tagline": "Fine jewelry · Los Santos",
     "currency": "$"
   },
   "rarities": {
-    "street": { "label": "Street", "rank": 1, "color": "#c4b8a8" },
-    "iced": { "label": "Iced", "rank": 2, "color": "#e8b84a" },
-    "exclusive": { "label": "Exclusive", "rank": 3, "color": "#ff5a4a" },
-    "legendary": { "label": "Legendary", "rank": 4, "color": "#ffd27a" }
+    "street": {
+      "label": "Street",
+      "rank": 1,
+      "color": "#c4b8a8"
+    },
+    "iced": {
+      "label": "Iced",
+      "rank": 2,
+      "color": "#e8b84a"
+    },
+    "exclusive": {
+      "label": "Exclusive",
+      "rank": 3,
+      "color": "#ff5a4a"
+    },
+    "legendary": {
+      "label": "Legendary",
+      "rank": 4,
+      "color": "#ffd27a"
+    }
   },
   "materials": {
-    "icebox_gold_bar": { "label": "Gold Bar", "weight": 400, "wholesale": 1200 },
-    "icebox_silver_bar": { "label": "Silver Bar", "weight": 350, "wholesale": 700 },
-    "icebox_platinum_bar": { "label": "Platinum Bar", "weight": 450, "wholesale": 1800 },
-    "icebox_diamond": { "label": "Cut Diamond", "weight": 20, "wholesale": 2200 },
-    "icebox_ruby": { "label": "Cut Ruby", "weight": 20, "wholesale": 1600 },
-    "icebox_chain_links": { "label": "Chain Links", "weight": 80, "wholesale": 350 },
-    "icebox_polish": { "label": "Jewel Polish", "weight": 40, "wholesale": 200 }
+    "icebox_gold_bar": {
+      "label": "Gold Bar",
+      "weight": 400,
+      "wholesale": 1200
+    },
+    "icebox_silver_bar": {
+      "label": "Silver Bar",
+      "weight": 350,
+      "wholesale": 700
+    },
+    "icebox_platinum_bar": {
+      "label": "Platinum Bar",
+      "weight": 450,
+      "wholesale": 1800
+    },
+    "icebox_diamond": {
+      "label": "Cut Diamond",
+      "weight": 20,
+      "wholesale": 2200
+    },
+    "icebox_ruby": {
+      "label": "Cut Ruby",
+      "weight": 20,
+      "wholesale": 1600
+    },
+    "icebox_chain_links": {
+      "label": "Chain Links",
+      "weight": 80,
+      "wholesale": 350
+    },
+    "icebox_polish": {
+      "label": "Jewel Polish",
+      "weight": 40,
+      "wholesale": 200
+    }
   },
   "fence": {
     "hotPercent": 0.34,
@@ -47,19 +91,36 @@
       "label": "Trapper Chain",
       "category": "chain",
       "rarity": "street",
-      "description": "Iced cuban with a mint trapper plate and a hanging shoe. Entry ice with a name on it.",
+      "description": "Cuban-link necklace with a mint trapper nameplate and hanging sneaker charm. Polished gold, street weight, serialized at the bench. An entry piece with a name on it.",
       "gradeRequired": 0,
       "craftDuration": 8000,
       "weight": 220,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 2 },
-        { "item": "icebox_chain_links", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 9800, "restock": 3200, "rush": 7800 },
+      "prices": {
+        "retail": 9800,
+        "restock": 3200,
+        "rush": 7800
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 278, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 278,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 90
     },
     "icebox_block_baby": {
       "id": "icebox_block_baby",
@@ -67,21 +128,44 @@
       "label": "Block Baby",
       "category": "chain",
       "rarity": "street",
-      "description": "Twin cups over a cartoon baby plaque. Loud, iced, and built for the block.",
+      "description": "Twin cup charms over a cartoon baby plaque on iced cuban. Loud silhouette, mixed gold and silver, finished for the Block. A medallion that does not sit quiet in the case.",
       "gradeRequired": 0,
       "craftDuration": 9000,
       "weight": 260,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 2 },
-        { "item": "icebox_silver_bar", "count": 1 },
-        { "item": "icebox_chain_links", "count": 2 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_silver_bar",
+          "count": 1
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 12400, "restock": 4100, "rush": 10200 },
+      "prices": {
+        "retail": 12400,
+        "restock": 4100,
+        "rush": 10200
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 279, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 279,
+          "texture": 0
+        }
+      },
+      "collection": "medallions",
+      "pickupWait": 105
     },
     "icebox_smokey": {
       "id": "icebox_smokey",
@@ -89,20 +173,40 @@
       "label": "Smokey",
       "category": "chain",
       "rarity": "iced",
-      "description": "Double cuban with a pink SMOKEY nameplate. Texture 0 colorway.",
+      "description": "Double cuban with a pink SMOKEY plate. Ruby-set letters, gold body, cut for the neck. The original Smokey colorway — texture 0.",
       "gradeRequired": 0,
       "craftDuration": 11000,
       "weight": 280,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 3 },
-        { "item": "icebox_chain_links", "count": 2 },
-        { "item": "icebox_ruby", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 3
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        },
+        {
+          "item": "icebox_ruby",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 16800, "restock": 5400, "rush": 14500 },
+      "prices": {
+        "retail": 16800,
+        "restock": 5400,
+        "rush": 14500
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 280, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 280,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 120
     },
     "icebox_smokey_2": {
       "id": "icebox_smokey_2",
@@ -110,21 +214,44 @@
       "label": "Smokey 2",
       "category": "chain",
       "rarity": "iced",
-      "description": "Same Smokey piece, blue nameplate colorway. Texture 2.",
+      "description": "The same Smokey double-cuban, blue plate colorway. Diamond-set finish with jeweler polish. Same weight as Smokey, different stone and hue — texture 2.",
       "gradeRequired": 0,
       "craftDuration": 11000,
       "weight": 280,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 3 },
-        { "item": "icebox_chain_links", "count": 2 },
-        { "item": "icebox_diamond", "count": 1 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 3
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 1
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 16800, "restock": 5400, "rush": 14800 },
+      "prices": {
+        "retail": 16800,
+        "restock": 5400,
+        "rush": 14800
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 280, "texture": 2 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 280,
+          "texture": 2
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 120
     },
     "icebox_self_made": {
       "id": "icebox_self_made",
@@ -132,20 +259,40 @@
       "label": "Self Made",
       "category": "chain",
       "rarity": "iced",
-      "description": "Tennis plus cuban with a SELF MADE plaque. Quiet flex, loud letters.",
+      "description": "Tennis and cuban layered under a SELF MADE plaque. Platinum and diamond, quieter metal, louder letters. Built for a clean counter presentation.",
       "gradeRequired": 0,
       "craftDuration": 12000,
       "weight": 240,
       "ingredients": [
-        { "item": "icebox_platinum_bar", "count": 2 },
-        { "item": "icebox_diamond", "count": 2 },
-        { "item": "icebox_chain_links", "count": 1 }
+        {
+          "item": "icebox_platinum_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 2
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 18600, "restock": 6100, "rush": 16200 },
+      "prices": {
+        "retail": 18600,
+        "restock": 6100,
+        "rush": 16200
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 281, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 281,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 130
     },
     "icebox_dumb_rich": {
       "id": "icebox_dumb_rich",
@@ -153,20 +300,40 @@
       "label": "Dumb Rich",
       "category": "chain",
       "rarity": "exclusive",
-      "description": "Iced cuban with a DUMB RICH stack and a hanging cup. Money that does not whisper.",
+      "description": "Heavy iced cuban with a DUMB RICH stack and hanging cup. Diamond-set gold, exclusive grade. Money that does not whisper.",
       "gradeRequired": 1,
       "craftDuration": 14000,
       "weight": 300,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 3 },
-        { "item": "icebox_diamond", "count": 2 },
-        { "item": "icebox_chain_links", "count": 2 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 3
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 2
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        }
       ],
-      "prices": { "retail": 22400, "restock": 7400, "rush": 19800 },
+      "prices": {
+        "retail": 22400,
+        "restock": 7400,
+        "rush": 19800
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 282, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 282,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 150
     },
     "icebox_face_shot": {
       "id": "icebox_face_shot",
@@ -174,21 +341,44 @@
       "label": "Face Shot",
       "category": "chain",
       "rarity": "exclusive",
-      "description": "Red iced cuban over a house plaque. FACE SHOT — do not miss.",
+      "description": "Red iced cuban over a house FACE SHOT plaque. Ruby and diamond setting, jeweler polish. A piece that reads from across the floor.",
       "gradeRequired": 1,
       "craftDuration": 15000,
       "weight": 310,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 3 },
-        { "item": "icebox_ruby", "count": 2 },
-        { "item": "icebox_diamond", "count": 2 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 3
+        },
+        {
+          "item": "icebox_ruby",
+          "count": 2
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 2
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 26800, "restock": 8900, "rush": 23500 },
+      "prices": {
+        "retail": 26800,
+        "restock": 8900,
+        "rush": 23500
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 283, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 283,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 160
     },
     "icebox_slime": {
       "id": "icebox_slime",
@@ -196,22 +386,48 @@
       "label": "Slime",
       "category": "chain",
       "rarity": "exclusive",
-      "description": "Cuban with a dripping slime medallion. Green ice, brick face, extra drip.",
+      "description": "Cuban-link with a dripping slime medallion — green ice, brick face, extra drip. Gold, platinum, and diamond. Exclusive bench work.",
       "gradeRequired": 1,
       "craftDuration": 16000,
       "weight": 290,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 2 },
-        { "item": "icebox_platinum_bar", "count": 1 },
-        { "item": "icebox_diamond", "count": 3 },
-        { "item": "icebox_chain_links", "count": 1 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_platinum_bar",
+          "count": 1
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 3
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 1
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 28600, "restock": 9600, "rush": 25200 },
+      "prices": {
+        "retail": 28600,
+        "restock": 9600,
+        "rush": 25200
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 284, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 284,
+          "texture": 0
+        }
+      },
+      "collection": "medallions",
+      "pickupWait": 170
     },
     "icebox_est": {
       "id": "icebox_est",
@@ -219,21 +435,44 @@
       "label": "EST",
       "category": "chain",
       "rarity": "exclusive",
-      "description": "Heavy cuban with a carved EST plate. House letters, house prices.",
+      "description": "Heavy cuban with a carved EST plate. House letters in gold, platinum, and diamond. Senior-grade stock, house prices.",
       "gradeRequired": 2,
       "craftDuration": 17000,
       "weight": 300,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 4 },
-        { "item": "icebox_platinum_bar", "count": 1 },
-        { "item": "icebox_diamond", "count": 3 },
-        { "item": "icebox_chain_links", "count": 2 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 4
+        },
+        {
+          "item": "icebox_platinum_bar",
+          "count": 1
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 3
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        }
       ],
-      "prices": { "retail": 34200, "restock": 11800, "rush": 29500 },
+      "prices": {
+        "retail": 34200,
+        "restock": 11800,
+        "rush": 29500
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 285, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 285,
+          "texture": 0
+        }
+      },
+      "collection": "nameplates",
+      "pickupWait": 180
     },
     "icebox_sharky": {
       "id": "icebox_sharky",
@@ -241,22 +480,48 @@
       "label": "Sharky",
       "category": "chain",
       "rarity": "legendary",
-      "description": "Stacked cubans, a JEFF tag, and the shark. Layered ice — this one gets snatched.",
+      "description": "Stacked cubans, a JEFF tag, and the shark pendant. Layered gold and platinum with a dense diamond set. Legendary weight — this one gets snatched.",
       "gradeRequired": 2,
       "craftDuration": 20000,
       "weight": 340,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 4 },
-        { "item": "icebox_platinum_bar", "count": 1 },
-        { "item": "icebox_diamond", "count": 6 },
-        { "item": "icebox_chain_links", "count": 2 },
-        { "item": "icebox_polish", "count": 2 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 4
+        },
+        {
+          "item": "icebox_platinum_bar",
+          "count": 1
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 6
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 2
+        },
+        {
+          "item": "icebox_polish",
+          "count": 2
+        }
       ],
-      "prices": { "retail": 54000, "restock": 19800, "rush": 46500 },
+      "prices": {
+        "retail": 54000,
+        "restock": 19800,
+        "rush": 46500
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 286, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 286,
+          "texture": 0
+        }
+      },
+      "collection": "layered",
+      "pickupWait": 210
     },
     "icebox_capalot": {
       "id": "icebox_capalot",
@@ -264,22 +529,48 @@
       "label": "Capalot",
       "category": "chain",
       "rarity": "legendary",
-      "description": "Stacked gold cubans, globe pendant, CAPALOT across the chest. Owner-grade ice.",
+      "description": "Stacked gold cubans, globe pendant, CAPALOT across the chest. Owner-grade ice: gold, platinum, diamond, and a ruby. The heaviest piece in the book.",
       "gradeRequired": 4,
       "craftDuration": 24000,
       "weight": 360,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 5 },
-        { "item": "icebox_platinum_bar", "count": 2 },
-        { "item": "icebox_diamond", "count": 8 },
-        { "item": "icebox_ruby", "count": 1 },
-        { "item": "icebox_chain_links", "count": 3 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 5
+        },
+        {
+          "item": "icebox_platinum_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 8
+        },
+        {
+          "item": "icebox_ruby",
+          "count": 1
+        },
+        {
+          "item": "icebox_chain_links",
+          "count": 3
+        }
       ],
-      "prices": { "retail": 82000, "restock": 30200, "rush": 71000 },
+      "prices": {
+        "retail": 82000,
+        "restock": 30200,
+        "rush": 71000
+      },
       "wear": {
         "slot": "chain",
-        "male": { "type": "component", "id": 7, "drawable": 287, "texture": 0 }
-      }
+        "male": {
+          "type": "component",
+          "id": 7,
+          "drawable": 287,
+          "texture": 0
+        }
+      },
+      "collection": "layered",
+      "pickupWait": 240
     },
     "icebox_watch_steel": {
       "id": "icebox_watch_steel",
@@ -287,20 +578,42 @@
       "label": "Steel Face",
       "category": "watch",
       "rarity": "street",
-      "description": "Brushed steel watch. Clean enough for the counter, tough enough for the street.",
+      "description": "Brushed steel wrist piece. Clean markers, tight bracelet, finished to sit next to the chains. Counter-ready and street-tough.",
       "gradeRequired": 0,
       "craftDuration": 7000,
       "weight": 120,
       "ingredients": [
-        { "item": "icebox_silver_bar", "count": 1 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_silver_bar",
+          "count": 1
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 3800, "restock": 1200, "rush": 2800 },
+      "prices": {
+        "retail": 3800,
+        "restock": 1200,
+        "rush": 2800
+      },
       "wear": {
         "slot": "watch",
-        "male": { "type": "prop", "id": 6, "drawable": 0, "texture": 0 },
-        "female": { "type": "prop", "id": 6, "drawable": 0, "texture": 0 }
-      }
+        "male": {
+          "type": "prop",
+          "id": 6,
+          "drawable": 0,
+          "texture": 0
+        },
+        "female": {
+          "type": "prop",
+          "id": 6,
+          "drawable": 0,
+          "texture": 0
+        }
+      },
+      "collection": "timepieces",
+      "pickupWait": 60
     },
     "icebox_watch_gold": {
       "id": "icebox_watch_gold",
@@ -308,21 +621,68 @@
       "label": "Gold Face",
       "category": "watch",
       "rarity": "exclusive",
-      "description": "Gold bezel, iced markers. Wrist game that matches the neck.",
+      "description": "Gold bezel with iced markers. Diamond-set face, jeweler polish. Wrist game cut to match the neck.",
       "gradeRequired": 2,
       "craftDuration": 13000,
       "weight": 140,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 2 },
-        { "item": "icebox_diamond", "count": 2 },
-        { "item": "icebox_polish", "count": 1 }
+        {
+          "item": "icebox_gold_bar",
+          "count": 2
+        },
+        {
+          "item": "icebox_diamond",
+          "count": 2
+        },
+        {
+          "item": "icebox_polish",
+          "count": 1
+        }
       ],
-      "prices": { "retail": 16400, "restock": 5400, "rush": 14200 },
+      "prices": {
+        "retail": 16400,
+        "restock": 5400,
+        "rush": 14200
+      },
       "wear": {
         "slot": "watch",
-        "male": { "type": "prop", "id": 6, "drawable": 1, "texture": 0 },
-        "female": { "type": "prop", "id": 6, "drawable": 1, "texture": 0 }
-      }
+        "male": {
+          "type": "prop",
+          "id": 6,
+          "drawable": 1,
+          "texture": 0
+        },
+        "female": {
+          "type": "prop",
+          "id": 6,
+          "drawable": 1,
+          "texture": 0
+        }
+      },
+      "collection": "timepieces",
+      "pickupWait": 140
+    }
+  },
+  "collections": {
+    "nameplates": {
+      "label": "Nameplates",
+      "rank": 1,
+      "copy": "Letter plates and house names on cuban links."
+    },
+    "medallions": {
+      "label": "Medallions",
+      "rank": 2,
+      "copy": "Sculpted pendants hung on iced cuban."
+    },
+    "layered": {
+      "label": "Layered Cubans",
+      "rank": 3,
+      "copy": "Stacked links and statement pieces."
+    },
+    "timepieces": {
+      "label": "Timepieces",
+      "rank": 4,
+      "copy": "Wrist pieces finished to match the neck."
     }
   }
 }

@@ -77,6 +77,23 @@ function craftDuration(chain, count = 1, minMs = 2500, batchScale = 0.55) {
   return Math.floor(base + (count - 1) * base * batchScale);
 }
 
+function pickupWait(chain, count = 1, skipMaterials = false, minWait = 45, rushScale = 0.4, batchScale = 0.55) {
+  let base = Math.max(Number(chain?.pickupWait) || minWait, minWait);
+  if (skipMaterials) base = Math.max(minWait, Math.floor(base * rushScale));
+  return Math.floor(base + (count - 1) * base * batchScale);
+}
+
+function expeditePrice(chain, count, remaining, totalWait, skipMaterials = false, minPrice = 400) {
+  remaining = Math.max(0, Math.floor(remaining || 0));
+  if (remaining <= 0) return 0;
+  totalWait = Math.max(1, Math.floor(totalWait || remaining));
+  const frac = remaining / totalWait;
+  const rush = rushPrice(chain, count);
+  let price = skipMaterials ? Math.floor(rush * 0.22 * frac) : Math.floor(rush * 0.5 * (0.35 + 0.65 * frac));
+  if (price < minPrice) price = minPrice;
+  return price;
+}
+
 function validateCraft(payload, maxBatch = 5) {
   if (!payload || typeof payload.id !== 'string') return [false, 'invalid'];
   if (!catalog.chains[payload.id]) return [false, 'unknown_piece'];
@@ -157,6 +174,9 @@ test('catalog has unique chain keys matching ids', () => {
       assert.equal(chain.wear.male.type, 'component');
       assert.equal(chain.wear.male.id, 7);
     }
+    assert.ok(catalog.collections[chain.collection], `missing collection ${chain.collection}`);
+    assert.ok(chain.pickupWait >= 45, chain.id);
+    assert.ok(chain.description && chain.description.length > 40, chain.id);
     assert.ok(retailPrice(chain) > 0);
     assert.ok(chain.prices.restock < chain.prices.retail);
     assert.ok(Array.isArray(chain.ingredients) && chain.ingredients.length > 0);
@@ -226,6 +246,18 @@ test('batch craft scales ingredients and duration', () => {
   assert.equal(batchCount(5, 5), 5);
   assert.equal(batchCount(6, 5), null);
   assert.equal(batchCount(0, 5), null);
+});
+
+test('pickup wait and expedite scale with time left', () => {
+  const trapper = catalog.chains.icebox_trapper;
+  assert.equal(pickupWait(trapper, 1), 90);
+  assert.equal(pickupWait(trapper, 1, true), Math.max(45, Math.floor(90 * 0.4)));
+  assert.equal(pickupWait(trapper, 3), Math.floor(90 + 2 * 90 * 0.55));
+  const full = expeditePrice(trapper, 1, 90, 90, false);
+  const half = expeditePrice(trapper, 1, 45, 90, false);
+  assert.ok(full >= 400);
+  assert.ok(half < full);
+  assert.equal(expeditePrice(trapper, 1, 0, 90, false), 0);
 });
 
 test('every piece has a unique recipe and a rush surcharge', () => {
@@ -349,6 +381,9 @@ test('nui never trusts client-sent prices', () => {
   assert.doesNotMatch(app, /post\('buy'.+retail/);
   assert.ok(app.includes("post('craftStart', { id: item.id, count, skipMaterials: Boolean(skipMaterials) })"));
   assert.doesNotMatch(app, /post\('craftStart'.+rush/);
+  assert.ok(app.includes("post('craftPickup', { id: order.id })"));
+  assert.ok(app.includes("post('craftExpedite', { id: order.id })"));
+  assert.doesNotMatch(app, /post\('craftExpedite'.+expeditePrice/);
   assert.ok(app.includes("post('supplierBuy', { item: item.id, count })"));
   assert.doesNotMatch(app, /post\('supplierBuy'.+wholesale/);
   assert.ok(app.includes("post('fence', { serials: [item.serial] })"));
@@ -368,6 +403,9 @@ test('server rejects unknown pieces and token speedruns', () => {
   assert.ok(server.includes("RemoveItem(stash, itemName, 1"));
   assert.ok(server.includes('stockedOnly'));
   assert.ok(server.includes('icebox-rush'));
+  assert.ok(server.includes('craftPickup'));
+  assert.ok(server.includes('craftExpedite'));
+  assert.ok(server.includes('iceboxOrders'));
 });
 
 function locationCoords(loc) {
@@ -431,6 +469,8 @@ test('config uses rebel coords and dual showroom', () => {
   assert.ok(cfg.includes('stockedOnly'));
   assert.ok(cfg.includes('maxBatch'));
   assert.ok(cfg.includes('rushEnabled'));
+  assert.ok(cfg.includes('Config.Interact'));
+  assert.ok(cfg.includes('minWait'));
 });
 
 test('locationCoords reads FiveM vector userdata xyz', () => {
@@ -439,6 +479,10 @@ test('locationCoords reads FiveM vector userdata xyz', () => {
   assert.ok(lua.includes("v.x or (type(v) == 'table' and v[1])"));
   const client = readFileSync(join(root, 'client/target.lua'), 'utf8');
   assert.ok(client.includes('addSphereZone'));
+  assert.ok(client.includes('AddInteraction'));
+  assert.ok(client.includes('AddLocalEntityInteraction'));
+  assert.ok(client.includes('ox_target:addGlobalPlayer'));
+  assert.ok(client.includes('icebox_snatch'));
   const server = readFileSync(join(root, 'server/main.lua'), 'utf8');
   assert.ok(server.includes('nearStore'));
 });

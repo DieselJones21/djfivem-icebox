@@ -130,6 +130,59 @@ function IceboxLogic.craftDuration(chain, count, minMs, batchScale)
     return math.floor(base + (count - 1) * base * batchScale)
 end
 
+--- Real wait in seconds before a bench order can be picked up.
+---@param chain table
+---@param count integer|nil
+---@param skipMaterials boolean|nil
+---@param minWait integer|nil
+---@param rushScale number|nil
+---@param batchScale number|nil
+---@return integer
+function IceboxLogic.pickupWait(chain, count, skipMaterials, minWait, rushScale, batchScale)
+    count = count or 1
+    minWait = minWait or 45
+    local base = tonumber(chain and chain.pickupWait) or minWait
+    if base < minWait then base = minWait end
+    if skipMaterials then
+        base = math.max(minWait, math.floor(base * (rushScale or 0.4)))
+    end
+    batchScale = batchScale or 0.55
+    return math.floor(base + (count - 1) * base * batchScale)
+end
+
+--- Cash to finish remaining wait now. Mats (or rush) were already paid at place-order.
+---@param chain table
+---@param count integer|nil
+---@param remaining integer
+---@param totalWait integer
+---@param skipMaterials boolean|nil
+---@param minPrice integer|nil
+---@return integer
+function IceboxLogic.expeditePrice(chain, count, remaining, totalWait, skipMaterials, minPrice)
+    remaining = math.max(0, math.floor(tonumber(remaining) or 0))
+    if remaining <= 0 then return 0 end
+    totalWait = math.max(1, math.floor(tonumber(totalWait) or remaining))
+    local frac = remaining / totalWait
+    local rush = IceboxLogic.rushPrice(chain, count)
+    local price
+    if skipMaterials then
+        price = math.floor(rush * 0.22 * frac)
+    else
+        price = math.floor(rush * 0.5 * (0.35 + 0.65 * frac))
+    end
+    minPrice = tonumber(minPrice) or 400
+    if price < minPrice then price = minPrice end
+    return price
+end
+
+---@param payload table
+---@return boolean, string|nil
+function IceboxLogic.validateOrder(payload)
+    if type(payload) ~= 'table' then return false, 'invalid' end
+    if type(payload.id) ~= 'string' or payload.id == '' then return false, 'invalid' end
+    return true
+end
+
 ---@param chain table
 ---@param counts table<string, integer>
 ---@param count integer|nil
