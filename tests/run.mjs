@@ -305,6 +305,15 @@ test('every catalog item has an inventory and nui image', () => {
   }
 });
 
+test('chain inventory icons are small transparent PNGs', () => {
+  for (const [id, chain] of Object.entries(catalog.chains)) {
+    if (chain.category !== 'chain') continue;
+    const buf = readFileSync(join(root, 'install/images', `${id}.png`));
+    assert.ok(buf.length < 45000, `${id} is ${buf.length} bytes`);
+    assert.equal(buf[25], 6, `${id} should be RGBA`);
+  }
+});
+
 test('config uses rebel coords and dual showroom', () => {
   const cfg = readFileSync(join(root, 'config.lua'), 'utf8');
   assert.ok(cfg.includes('-603.81'));

@@ -190,49 +190,19 @@ ITEMS = {
     "icebox_watch_gold": ("watch", GOLD),
 }
 
-# Worn-chain screenshots processed into square inventory / NUI icons.
-# Order matches the male pack: Trapper → Capalot, with both Smokey textures.
 CHAIN_PHOTOS = [
-    ("icebox_trapper", "494fbbec-371e-4986-a849-2253303def50.png"),
-    ("icebox_block_baby", "2d48067d-51d7-4229-9374-ab9aa5d92f9b.png"),
-    ("icebox_smokey", "985f392a-d0d3-4d2d-8c0e-e3b089a1da56.png"),
-    ("icebox_smokey_2", "f35d97a2-7464-4e54-9391-22b41d91508e.png"),
-    ("icebox_self_made", "13c03d2b-750b-4441-a9fb-72377391c838.png"),
-    ("icebox_dumb_rich", "dbcf8385-7afc-4266-886b-2aaa53002dba.png"),
-    ("icebox_face_shot", "99fb5719-f3b1-4191-97f9-8c0be19c463a.png"),
-    ("icebox_slime", "b77b04ea-dddc-4613-87b7-33f047e6fa57.png"),
-    ("icebox_est", "9773f08c-502a-43c2-9ef0-0b019087f3db.png"),
-    ("icebox_sharky", "2ed9e52b-292f-4617-96d6-b5bc098587b7.png"),
-    ("icebox_capalot", "d3a392f5-c5ca-4a33-ae5f-68830e62d7ba.png"),
+    "icebox_trapper",
+    "icebox_block_baby",
+    "icebox_smokey",
+    "icebox_smokey_2",
+    "icebox_self_made",
+    "icebox_dumb_rich",
+    "icebox_face_shot",
+    "icebox_slime",
+    "icebox_est",
+    "icebox_sharky",
+    "icebox_capalot",
 ]
-
-PHOTO_DIRS = [
-    Path("/home/ubuntu/.cursor/projects/workspace/assets"),
-    ROOT / "install" / "chain-photos",
-]
-
-
-def process_photo(src: Path) -> bytes:
-    from PIL import Image
-
-    im = Image.open(src).convert("RGBA")
-    w, h = im.size
-    side = max(w, h)
-    canvas = Image.new("RGBA", (side, side), (18, 8, 10, 255))
-    canvas.paste(im, ((side - w) // 2, (side - h) // 2), im)
-    canvas = canvas.resize((SIZE * 2, SIZE * 2), Image.Resampling.LANCZOS)
-    buf = __import__("io").BytesIO()
-    canvas.convert("RGB").save(buf, format="PNG", optimize=True)
-    return buf.getvalue()
-
-
-def find_photo(filename: str) -> Path | None:
-    for folder in PHOTO_DIRS:
-        path = folder / filename
-        if path.exists():
-            return path
-    named = ROOT / "install" / "chain-photos" / filename
-    return named if named.exists() else None
 
 
 
@@ -275,22 +245,18 @@ def main() -> None:
         for out in OUTS:
             (out / f"{name}.png").write_bytes(data)
     photos = 0
-    for name, filename in CHAIN_PHOTOS:
-        src = find_photo(filename) or find_photo(f"{name}.png")
+    for name in CHAIN_PHOTOS:
         dest = OUTS[0] / f"{name}.png"
-        if src:
-            data = process_photo(src)
-            for out in OUTS:
-                (out / f"{name}.png").write_bytes(data)
-            photos += 1
-        elif dest.exists():
+        if dest.exists():
             data = dest.read_bytes()
             for out in OUTS[1:]:
                 (out / f"{name}.png").write_bytes(data)
             photos += 1
         else:
-            raise SystemExit(f"missing chain photo for {name}: {filename}")
-    print(f"wrote {len(ITEMS)} stock icons and {photos} chain photos to {', '.join(str(p) for p in OUTS)}")
+            raise SystemExit(
+                f"missing chain icon for {name}. Run tests/process_chain_icons.py to cut transparent icons."
+            )
+    print(f"wrote {len(ITEMS)} stock icons and synced {photos} chain icons to {', '.join(str(p) for p in OUTS)}")
 
 
 if __name__ == "__main__":
