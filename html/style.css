@@ -115,14 +115,14 @@ body.demo {
 }
 
 .stage { position: relative; padding: 24px 28px 22px; display: flex; flex-direction: column; min-width: 0; }
-.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .top h2 {
   font-family: 'Cormorant Garamond', serif;
   font-size: 40px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
-.top-actions { display: flex; gap: 10px; align-items: center; }
+.top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .chip, .ghost, .action {
   border-radius: 0;
@@ -301,7 +301,7 @@ body.demo {
 .copy { color: var(--muted); font-size: 13px; line-height: 1.55; }
 .meta { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .meta li { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); }
-.meta b { color: var(--ivory); font-weight: 500; text-align: right; }
+.meta b { color: var(--ivory); font-weight: 500; text-align: right; max-width: 64%; overflow-wrap: anywhere; }
 .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: auto; gap: 8px; }
 .price { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--gold-2); }
 .price-note { color: var(--muted); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; text-align: right; }
