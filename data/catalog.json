@@ -13,13 +13,13 @@
     "legendary": { "label": "Legendary", "rank": 4, "color": "#ffd27a" }
   },
   "materials": {
-    "icebox_gold_bar": { "label": "Gold Bar", "weight": 400 },
-    "icebox_silver_bar": { "label": "Silver Bar", "weight": 350 },
-    "icebox_platinum_bar": { "label": "Platinum Bar", "weight": 450 },
-    "icebox_diamond": { "label": "Cut Diamond", "weight": 20 },
-    "icebox_ruby": { "label": "Cut Ruby", "weight": 20 },
-    "icebox_chain_links": { "label": "Chain Links", "weight": 80 },
-    "icebox_polish": { "label": "Jewel Polish", "weight": 40 }
+    "icebox_gold_bar": { "label": "Gold Bar", "weight": 400, "wholesale": 1200 },
+    "icebox_silver_bar": { "label": "Silver Bar", "weight": 350, "wholesale": 700 },
+    "icebox_platinum_bar": { "label": "Platinum Bar", "weight": 450, "wholesale": 1800 },
+    "icebox_diamond": { "label": "Cut Diamond", "weight": 20, "wholesale": 2200 },
+    "icebox_ruby": { "label": "Cut Ruby", "weight": 20, "wholesale": 1600 },
+    "icebox_chain_links": { "label": "Chain Links", "weight": 80, "wholesale": 350 },
+    "icebox_polish": { "label": "Jewel Polish", "weight": 40, "wholesale": 200 }
   },
   "fence": {
     "hotPercent": 0.34,
@@ -55,7 +55,7 @@
         { "item": "icebox_gold_bar", "count": 2 },
         { "item": "icebox_chain_links", "count": 1 }
       ],
-      "prices": { "retail": 9800, "restock": 3200 },
+      "prices": { "retail": 9800, "restock": 3200, "rush": 7800 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 278, "texture": 0 }
@@ -73,10 +73,11 @@
       "weight": 260,
       "ingredients": [
         { "item": "icebox_gold_bar", "count": 2 },
+        { "item": "icebox_silver_bar", "count": 1 },
         { "item": "icebox_chain_links", "count": 2 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 12400, "restock": 4100 },
+      "prices": { "retail": 12400, "restock": 4100, "rush": 10200 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 279, "texture": 0 }
@@ -95,9 +96,9 @@
       "ingredients": [
         { "item": "icebox_gold_bar", "count": 3 },
         { "item": "icebox_chain_links", "count": 2 },
-        { "item": "icebox_polish", "count": 1 }
+        { "item": "icebox_ruby", "count": 1 }
       ],
-      "prices": { "retail": 16800, "restock": 5400 },
+      "prices": { "retail": 16800, "restock": 5400, "rush": 14500 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 280, "texture": 0 }
@@ -116,9 +117,10 @@
       "ingredients": [
         { "item": "icebox_gold_bar", "count": 3 },
         { "item": "icebox_chain_links", "count": 2 },
+        { "item": "icebox_diamond", "count": 1 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 16800, "restock": 5400 },
+      "prices": { "retail": 16800, "restock": 5400, "rush": 14800 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 280, "texture": 2 }
@@ -139,7 +141,7 @@
         { "item": "icebox_diamond", "count": 2 },
         { "item": "icebox_chain_links", "count": 1 }
       ],
-      "prices": { "retail": 18600, "restock": 6100 },
+      "prices": { "retail": 18600, "restock": 6100, "rush": 16200 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 281, "texture": 0 }
@@ -160,7 +162,7 @@
         { "item": "icebox_diamond", "count": 2 },
         { "item": "icebox_chain_links", "count": 2 }
       ],
-      "prices": { "retail": 22400, "restock": 7400 },
+      "prices": { "retail": 22400, "restock": 7400, "rush": 19800 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 282, "texture": 0 }
@@ -182,7 +184,7 @@
         { "item": "icebox_diamond", "count": 2 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 26800, "restock": 8900 },
+      "prices": { "retail": 26800, "restock": 8900, "rush": 23500 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 283, "texture": 0 }
@@ -199,12 +201,13 @@
       "craftDuration": 16000,
       "weight": 290,
       "ingredients": [
-        { "item": "icebox_gold_bar", "count": 3 },
+        { "item": "icebox_gold_bar", "count": 2 },
+        { "item": "icebox_platinum_bar", "count": 1 },
         { "item": "icebox_diamond", "count": 3 },
-        { "item": "icebox_chain_links", "count": 2 },
+        { "item": "icebox_chain_links", "count": 1 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 28600, "restock": 9600 },
+      "prices": { "retail": 28600, "restock": 9600, "rush": 25200 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 284, "texture": 0 }
@@ -222,10 +225,11 @@
       "weight": 300,
       "ingredients": [
         { "item": "icebox_gold_bar", "count": 4 },
+        { "item": "icebox_platinum_bar", "count": 1 },
         { "item": "icebox_diamond", "count": 3 },
         { "item": "icebox_chain_links", "count": 2 }
       ],
-      "prices": { "retail": 34200, "restock": 11800 },
+      "prices": { "retail": 34200, "restock": 11800, "rush": 29500 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 285, "texture": 0 }
@@ -248,7 +252,7 @@
         { "item": "icebox_chain_links", "count": 2 },
         { "item": "icebox_polish", "count": 2 }
       ],
-      "prices": { "retail": 54000, "restock": 19800 },
+      "prices": { "retail": 54000, "restock": 19800, "rush": 46500 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 286, "texture": 0 }
@@ -271,7 +275,7 @@
         { "item": "icebox_ruby", "count": 1 },
         { "item": "icebox_chain_links", "count": 3 }
       ],
-      "prices": { "retail": 82000, "restock": 30200 },
+      "prices": { "retail": 82000, "restock": 30200, "rush": 71000 },
       "wear": {
         "slot": "chain",
         "male": { "type": "component", "id": 7, "drawable": 287, "texture": 0 }
@@ -291,7 +295,7 @@
         { "item": "icebox_silver_bar", "count": 1 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 3800, "restock": 1200 },
+      "prices": { "retail": 3800, "restock": 1200, "rush": 2800 },
       "wear": {
         "slot": "watch",
         "male": { "type": "prop", "id": 6, "drawable": 0, "texture": 0 },
@@ -313,7 +317,7 @@
         { "item": "icebox_diamond", "count": 2 },
         { "item": "icebox_polish", "count": 1 }
       ],
-      "prices": { "retail": 16400, "restock": 5400 },
+      "prices": { "retail": 16400, "restock": 5400, "rush": 14200 },
       "wear": {
         "slot": "watch",
         "male": { "type": "prop", "id": 6, "drawable": 1, "texture": 0 },

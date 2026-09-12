@@ -56,3 +56,21 @@ end
 function IceboxCatalog.isMaterial(itemName)
     return IceboxCatalog.materials[itemName] ~= nil
 end
+
+---@return table[]
+function IceboxCatalog.listMaterials()
+    local list = {}
+    for name, mat in pairs(IceboxCatalog.materials or {}) do
+        list[#list + 1] = {
+            id = name,
+            item = name,
+            label = mat.label or name,
+            weight = mat.weight,
+            wholesale = math.floor(tonumber(mat.wholesale) or 0),
+        }
+    end
+    table.sort(list, function(a, b)
+        return a.label < b.label
+    end)
+    return list
+end

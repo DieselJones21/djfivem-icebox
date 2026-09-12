@@ -68,6 +68,11 @@ RegisterNUICallback('fence', function(data, cb)
     cb(result or { ok = false })
 end)
 
+RegisterNUICallback('supplierBuy', function(data, cb)
+    local result = lib.callback.await('dj-icebox:server:supplierBuy', false, data)
+    cb(result or { ok = false })
+end)
+
 RegisterNUICallback('refresh', function(data, cb)
     local result = lib.callback.await('dj-icebox:server:uiData', false, data and data.view or 'showroom')
     cb(result or { ok = false })

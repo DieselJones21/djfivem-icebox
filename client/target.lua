@@ -107,6 +107,30 @@ local function setupBlips()
     end
 end
 
+local function refreshSupplierBlip()
+    local loc = Config.Locations.supplier
+    local want = loc and loc.enabled and loc.blip and loc.blip.enabled and (not loc.blip.jobOnly or isIcebox())
+    if want then
+        if zones.supplierBlip then return end
+        local c = loc.coords
+        local blip = AddBlipForCoord(c.x, c.y, c.z)
+        SetBlipSprite(blip, loc.blip.sprite)
+        SetBlipDisplay(blip, 4)
+        SetBlipScale(blip, loc.blip.scale)
+        SetBlipColour(blip, loc.blip.color)
+        SetBlipAsShortRange(blip, true)
+        BeginTextCommandSetBlipName('STRING')
+        AddTextComponentString(loc.blip.label)
+        EndTextCommandSetBlipName(blip)
+        zones.supplierBlip = blip
+        return
+    end
+    if zones.supplierBlip then
+        RemoveBlip(zones.supplierBlip)
+        zones.supplierBlip = nil
+    end
+end
+
 local function setupTargets()
     addZone('duty', Config.Locations.duty, {
         {
@@ -210,6 +234,23 @@ local function setupTargets()
         },
     })
 
+    if Config.Supplier.enabled and Config.Locations.supplier and Config.Locations.supplier.enabled then
+        addZone('supplier', {
+            coords = Config.Locations.supplier.coords,
+            radius = 1.8,
+        }, {
+            {
+                name = 'icebox_supplier_zone',
+                icon = 'fa-solid fa-boxes-stacked',
+                label = 'Buy Icebox materials',
+                canInteract = onDuty,
+                onSelect = function()
+                    IceboxNui.open('supplier')
+                end,
+            },
+        })
+    end
+
     exports.ox_target:addGlobalPlayer({
         {
             name = 'icebox_snatch',
@@ -261,8 +302,10 @@ end
 
 CreateThread(function()
     setupBlips()
+    refreshSupplierBlip()
     setupTargets()
     while true do
+        refreshSupplierBlip()
         if nearby(Config.Locations.clerk, 80.0) then
             local clerk = spawnPed('clerk', Config.Locations.clerk)
             attachPedTarget('clerk', clerk, {
@@ -289,6 +332,20 @@ CreateThread(function()
                 },
             })
         end
+        if Config.Supplier.enabled and nearby(Config.Locations.supplier, 80.0) then
+            local supplierPed = spawnPed('supplier', Config.Locations.supplier)
+            attachPedTarget('supplier', supplierPed, {
+                {
+                    name = 'icebox_supplier',
+                    icon = 'fa-solid fa-boxes-stacked',
+                    label = 'Buy Icebox materials',
+                    canInteract = onDuty,
+                    onSelect = function()
+                        IceboxNui.open('supplier')
+                    end,
+                },
+            })
+        end
         Wait(2000)
     end
 end)
@@ -304,6 +361,7 @@ AddEventHandler('onResourceStop', function(resource)
     end
     if zones.storeBlip then RemoveBlip(zones.storeBlip) end
     if zones.fenceBlip then RemoveBlip(zones.fenceBlip) end
+    if zones.supplierBlip then RemoveBlip(zones.supplierBlip) end
     for _, ped in pairs(peds) do
         if DoesEntityExist(ped) then
             DeleteEntity(ped)

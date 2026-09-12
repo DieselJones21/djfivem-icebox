@@ -43,7 +43,10 @@ local function chainPublic(chain)
         gradeRequired = chain.gradeRequired,
         craftDuration = chain.craftDuration,
         ingredients = chain.ingredients,
-        prices = { retail = IceboxLogic.retailPrice(chain) },
+        prices = {
+            retail = IceboxLogic.retailPrice(chain),
+            rush = IceboxLogic.rushPrice(chain, 1),
+        },
         slot = chain.wear and chain.wear.slot or chain.category,
     }
 end
@@ -61,9 +64,19 @@ local function countItem(src, item)
     return ox_inventory:Search(src, 'count', item) or 0
 end
 
-local function materialCounts(src, chain)
+local function allMaterialCounts(src)
     local counts = {}
-    if not chain or not chain.ingredients then return counts end
+    for name in pairs(IceboxCatalog.materials or {}) do
+        counts[name] = countItem(src, name)
+    end
+    return counts
+end
+
+local function materialCounts(src, chain)
+    if not chain or not chain.ingredients then
+        return allMaterialCounts(src)
+    end
+    local counts = {}
     for i = 1, #chain.ingredients do
         local item = chain.ingredients[i].item
         counts[item] = countItem(src, item)
@@ -71,14 +84,98 @@ local function materialCounts(src, chain)
     return counts
 end
 
-local function removeIngredients(src, chain)
-    for i = 1, #chain.ingredients do
-        local need = chain.ingredients[i]
-        if not ox_inventory:RemoveItem(src, need.item, need.count) then
+local function copyMetadata(meta)
+    local out = {}
+    if type(meta) ~= 'table' then return out end
+    for k, v in pairs(meta) do
+        out[k] = v
+    end
+    return out
+end
+
+local function refundIngredients(src, needs)
+    for i = 1, #needs do
+        ox_inventory:AddItem(src, needs[i].item, needs[i].count)
+    end
+end
+
+local function removeIngredients(src, chain, count)
+    local scaled = IceboxLogic.scaledIngredients(chain, count or 1)
+    local removed = {}
+    for i = 1, #scaled do
+        local need = scaled[i]
+        if need.count > 0 and not ox_inventory:RemoveItem(src, need.item, need.count) then
+            refundIngredients(src, removed)
             return false
         end
+        removed[#removed + 1] = need
     end
-    return true
+    return true, removed
+end
+
+local function showcaseSlots(itemName)
+    local stash = Config.Inventory.showcaseId
+    local slots = ox_inventory:GetSlotsWithItem(stash, itemName)
+    if type(slots) == 'table' then
+        return slots
+    end
+    local items = ox_inventory:GetInventoryItems(stash) or {}
+    local found = {}
+    for slotId, slot in pairs(items) do
+        if slot and slot.name == itemName then
+            found[slot.slot or slotId] = slot
+        end
+    end
+    return found
+end
+
+local function showcaseStock()
+    local stock = {}
+    for id in pairs(IceboxCatalog.chains) do
+        stock[id] = 0
+    end
+    local items = ox_inventory:GetInventoryItems(Config.Inventory.showcaseId)
+    if type(items) ~= 'table' then
+        local inv = ox_inventory:GetInventory(Config.Inventory.showcaseId)
+        items = inv and inv.items or {}
+    end
+    for _, slot in pairs(items) do
+        local name = slot and (slot.name or slot.item)
+        if name and IceboxCatalog.isItem(name) and not IceboxLogic.isHot(slot.metadata) and not IceboxLogic.isWorn(slot.metadata) then
+            stock[name] = (stock[name] or 0) + (slot.count or 1)
+        end
+    end
+    return stock
+end
+
+--- Pull one clean, unworn piece from the showcase. Keeps the crafted serial.
+local function takeShowcasePiece(itemName)
+    local stash = Config.Inventory.showcaseId
+    local chain = IceboxCatalog.get(itemName)
+    for slotId, slot in pairs(showcaseSlots(itemName)) do
+        if slot and not IceboxLogic.isHot(slot.metadata) and not IceboxLogic.isWorn(slot.metadata) then
+            local meta = copyMetadata(slot.metadata)
+            meta.worn = nil
+            if ox_inventory:RemoveItem(stash, itemName, 1, nil, slot.slot or slotId) then
+                if not meta.serial then
+                    meta.serial = IceboxLogic.newSerial('IB')
+                end
+                meta.description = meta.description or (chain and chain.label) or itemName
+                return meta
+            end
+        end
+    end
+    return nil
+end
+
+local function restockShowcase(itemName, meta)
+    ox_inventory:AddItem(Config.Inventory.showcaseId, itemName, 1, meta)
+end
+
+local function craftFailReason(reason)
+    if reason == 'unknown_piece' then return 'unknown_piece' end
+    if reason == 'count' then return 'invalid_count' end
+    return 'exploit'
 end
 
 local function addSociety(amount, reason)
@@ -315,6 +412,15 @@ lib.callback.register('dj-icebox:server:uiData', function(source, view)
         if not IceboxSecurity.near(source, Config.Locations.fence.coords, Config.Fence.distance) then
             return fail(source, 'too_far')
         end
+    elseif view == 'supplier' then
+        if not Config.Supplier.enabled then return fail(source, 'exploit') end
+        if not job.isIcebox then return fail(source, 'job_required') end
+        if Config.Supplier.requireDuty and Config.RequireDuty and not job.onduty then
+            return fail(source, 'duty_required')
+        end
+        if not IceboxSecurity.near(source, Config.Locations.supplier.coords, Config.Supplier.distance) then
+            return fail(source, 'too_far')
+        end
     end
 
     return {
@@ -326,18 +432,18 @@ lib.callback.register('dj-icebox:server:uiData', function(source, view)
         catalog = catalogPublic(),
         rarities = IceboxCatalog.rarities,
         infusions = IceboxCatalog.infusions,
-        materials = materialCounts(source, { ingredients = (function()
-            local list = {}
-            for name in pairs(IceboxCatalog.materials) do
-                list[#list + 1] = { item = name, count = 0 }
-            end
-            return list
-        end)() }),
+        materials = allMaterialCounts(source),
+        supplierCatalog = IceboxCatalog.listMaterials(),
+        stock = showcaseStock(),
         owned = ownedPieces(source),
         business = IceboxCatalog.data.business,
         requireDuty = Config.RequireDuty,
         wearEnabled = Config.Wear.enabled,
         wearVisual = Config.Wear.visual,
+        maxBatch = Config.Craft.maxBatch or 5,
+        rushEnabled = Config.Craft.rushEnabled ~= false,
+        maxSupplierBuy = Config.Supplier.maxPerBuy or 50,
+        stockedOnly = Config.Showroom.stockedOnly ~= false,
     }
 end)
 
@@ -363,8 +469,8 @@ lib.callback.register('dj-icebox:server:craftStart', function(source, payload)
     if not IceboxSecurity.rateLimit(source, 'craft', Config.RateLimits.craft) then
         return fail(source, 'slow_down')
     end
-    local valid, reason = IceboxLogic.validateCraft(payload)
-    if not valid then return fail(source, reason == 'unknown_piece' and 'unknown_piece' or 'exploit') end
+    local valid, reason = IceboxLogic.validateCraft(payload, Config.Craft.maxBatch)
+    if not valid then return fail(source, craftFailReason(reason)) end
     local ok, ply = IceboxSecurity.player(source)
     if not ok then return { ok = false, reason = 'exploit' } end
     local isJob, grade = IceboxSecurity.job(ply, true)
@@ -378,22 +484,37 @@ lib.callback.register('dj-icebox:server:craftStart', function(source, payload)
     end
 
     local chain = IceboxCatalog.get(payload.id)
-    local counts = materialCounts(source, chain)
-    local can, why = IceboxLogic.canCraft(chain, grade, counts)
-    if not can then
-        return fail(source, why == 'grade' and 'grade_required' or 'missing_ingredients')
+    local count = IceboxLogic.batchCount(payload.count or 1, Config.Craft.maxBatch)
+    local skipMaterials = IceboxLogic.wantsRush(payload.skipMaterials)
+
+    if skipMaterials then
+        if not Config.Craft.rushEnabled then return fail(source, 'rush_disabled') end
+        if not IceboxLogic.canCraftGrade(chain, grade) then
+            return fail(source, 'grade_required')
+        end
+        if IceboxLogic.rushPrice(chain, count) < 1 then
+            return fail(source, 'unknown_piece')
+        end
+    else
+        local counts = materialCounts(source, chain)
+        local can, why = IceboxLogic.canCraft(chain, grade, counts, count)
+        if not can then
+            return fail(source, why == 'grade' and 'grade_required' or 'missing_ingredients')
+        end
     end
-    if not ox_inventory:CanCarryItem(source, chain.item, 1) then
+    if not ox_inventory:CanCarryItem(source, chain.item, count) then
         return fail(source, 'inventory_full')
     end
 
-    local duration = math.max(chain.craftDuration or 8000, Config.Craft.minDurationMs)
+    local duration = IceboxLogic.craftDuration(chain, count, Config.Craft.minDurationMs, Config.Craft.batchScale)
     local token = IceboxSecurity.issueToken(source, 'craft', {
         id = chain.id,
+        count = count,
+        skipMaterials = skipMaterials,
         duration = duration,
         grade = grade,
     })
-    return { ok = true, token = token, duration = duration, label = chain.label }
+    return { ok = true, token = token, duration = duration, label = chain.label, count = count }
 end)
 
 lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
@@ -417,27 +538,73 @@ lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
     if not IceboxLogic.canCraftGrade(chain, grade) then
         return fail(source, 'grade_required')
     end
-    local counts = materialCounts(source, chain)
-    if not IceboxLogic.hasIngredients(chain, counts) then
-        return fail(source, 'missing_ingredients')
+    local count = IceboxLogic.batchCount(session.count or 1, Config.Craft.maxBatch) or 1
+    local skipMaterials = IceboxLogic.wantsRush(session.skipMaterials)
+    local rushCost = skipMaterials and IceboxLogic.rushPrice(chain, count) or 0
+
+    if skipMaterials then
+        if not Config.Craft.rushEnabled then return fail(source, 'rush_disabled') end
+        if rushCost < 1 then return fail(source, 'unknown_piece') end
+    else
+        local counts = materialCounts(source, chain)
+        if not IceboxLogic.hasIngredients(chain, counts, count) then
+            return fail(source, 'missing_ingredients')
+        end
     end
     if not ox_inventory:CanCarryItem(source, chain.item, 1) then
         return fail(source, 'inventory_full')
     end
-    if not removeIngredients(source, chain) then
+
+    if skipMaterials then
+        if not exports.qbx_core:RemoveMoney(source, 'cash', rushCost, 'icebox-rush') then
+            return fail(source, 'cannot_afford')
+        end
+    elseif not removeIngredients(source, chain, count) then
         return fail(source, 'missing_ingredients')
     end
-    local meta = buildMetadata(chain)
-    if not ox_inventory:AddItem(source, chain.item, 1, meta) then
-        --- Refund materials if the add failed after remove.
-        for i = 1, #chain.ingredients do
-            local need = chain.ingredients[i]
-            ox_inventory:AddItem(source, need.item, need.count)
+
+    local serials = {}
+    local added = 0
+    for _ = 1, count do
+        if added > 0 and not ox_inventory:CanCarryItem(source, chain.item, 1) then
+            break
         end
-        return fail(source, 'inventory_full')
+        local meta = buildMetadata(chain)
+        if not ox_inventory:AddItem(source, chain.item, 1, meta) then
+            break
+        end
+        added = added + 1
+        serials[#serials + 1] = meta.serial
     end
-    notify(source, 'craft_success', 'success', chain.label)
-    return { ok = true, serial = meta.serial, owned = ownedPieces(source), materials = materialCounts(source, { ingredients = {} }) }
+
+    if added < count then
+        local leftover = count - added
+        if skipMaterials then
+            local refund = IceboxLogic.rushPrice(chain, leftover)
+            if refund > 0 then
+                exports.qbx_core:AddMoney(source, 'cash', refund, 'icebox-rush-refund')
+            end
+        else
+            refundIngredients(source, IceboxLogic.scaledIngredients(chain, leftover))
+        end
+        if added == 0 then
+            return fail(source, 'inventory_full')
+        end
+    end
+
+    if added > 1 then
+        notify(source, 'craft_success_batch', 'success', added, chain.label)
+    else
+        notify(source, 'craft_success', 'success', chain.label)
+    end
+    return {
+        ok = true,
+        serial = serials[1],
+        serials = serials,
+        count = added,
+        owned = ownedPieces(source),
+        materials = allMaterialCounts(source),
+    }
 end)
 
 lib.callback.register('dj-icebox:server:infuse', function(source, payload)
@@ -497,18 +664,71 @@ lib.callback.register('dj-icebox:server:buy', function(source, payload)
     if not ox_inventory:CanCarryItem(source, chain.item, 1) then
         return fail(source, 'inventory_full')
     end
+
+    local meta
+    if Config.Showroom.stockedOnly then
+        meta = takeShowcasePiece(chain.item)
+        if not meta then
+            return fail(source, 'out_of_stock')
+        end
+    else
+        meta = buildMetadata(chain)
+    end
+
     if not exports.qbx_core:RemoveMoney(source, 'cash', price, 'icebox-retail') then
+        if Config.Showroom.stockedOnly then
+            restockShowcase(chain.item, meta)
+        end
         return fail(source, 'cannot_afford')
     end
-    local meta = buildMetadata(chain)
     if not ox_inventory:AddItem(source, chain.item, 1, meta) then
         exports.qbx_core:AddMoney(source, 'cash', price, 'icebox-retail-refund')
+        if Config.Showroom.stockedOnly then
+            restockShowcase(chain.item, meta)
+        end
         return fail(source, 'inventory_full')
     end
     --- Full ticket goes to the Icebox account so buyers cannot commission-kickback themselves.
     addSociety(price, 'Icebox retail')
     notify(source, 'buy_success', 'success', chain.label)
-    return { ok = true, serial = meta.serial, owned = ownedPieces(source) }
+    return { ok = true, serial = meta.serial, owned = ownedPieces(source), stock = showcaseStock() }
+end)
+
+lib.callback.register('dj-icebox:server:supplierBuy', function(source, payload)
+    if not Config.Supplier.enabled then return fail(source, 'exploit') end
+    if not IceboxSecurity.rateLimit(source, 'supplier', Config.RateLimits.supplier) then
+        return fail(source, 'slow_down')
+    end
+    local valid, reason = IceboxLogic.validateSupplierBuy(payload, Config.Supplier.maxPerBuy)
+    if not valid then return fail(source, craftFailReason(reason)) end
+    local ok, ply = IceboxSecurity.player(source)
+    if not ok then return { ok = false, reason = 'exploit' } end
+    local requireDuty = Config.Supplier.requireDuty ~= false
+    if ply.PlayerData.job.name ~= Config.JobName then return fail(source, 'job_required') end
+    local isJob = IceboxSecurity.job(ply, requireDuty)
+    if not isJob then return fail(source, 'duty_required') end
+    if not IceboxSecurity.near(source, Config.Locations.supplier.coords, Config.Supplier.distance) then
+        return fail(source, 'too_far')
+    end
+
+    local item = payload.item
+    local count = IceboxLogic.batchCount(payload.count or 1, Config.Supplier.maxPerBuy)
+    local unit = IceboxLogic.wholesale(item)
+    local price = unit * count
+    if price < 1 then return fail(source, 'unknown_piece') end
+    if not ox_inventory:CanCarryItem(source, item, count) then
+        return fail(source, 'inventory_full')
+    end
+    if not exports.qbx_core:RemoveMoney(source, 'cash', price, 'icebox-supplier') then
+        return fail(source, 'cannot_afford')
+    end
+    if not ox_inventory:AddItem(source, item, count) then
+        exports.qbx_core:AddMoney(source, 'cash', price, 'icebox-supplier-refund')
+        return fail(source, 'inventory_full')
+    end
+    local mat = IceboxCatalog.materials[item]
+    notify(source, 'supplier_success', 'success', count, mat and mat.label or item)
+    return { ok = true, materials = allMaterialCounts(source) }
 end)
 
 lib.callback.register('dj-icebox:server:toggleWear', function(source, payload)
