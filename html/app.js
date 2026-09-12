@@ -48,7 +48,7 @@
   };
 
   function itemImage(id) {
-    return `assets/items/${id}.png`;
+    return `assets/items/${id}.png?v=cutout`;
   }
 
   function money(n) {
