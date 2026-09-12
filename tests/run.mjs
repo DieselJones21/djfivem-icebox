@@ -37,18 +37,64 @@ function canCraftGrade(chain, grade) {
   return [true];
 }
 
-function hasIngredients(chain, counts) {
+function hasIngredients(chain, counts, count = 1) {
   if (!chain?.ingredients) return [false, 'unknown_piece'];
   for (const need of chain.ingredients) {
-    if ((counts[need.item] || 0) < need.count) return [false, 'ingredients'];
+    if ((counts[need.item] || 0) < need.count * count) return [false, 'ingredients'];
   }
   return [true];
 }
 
-function canCraft(chain, grade, counts) {
+function canCraft(chain, grade, counts, count = 1) {
   const gradeOk = canCraftGrade(chain, grade);
   if (!gradeOk[0]) return gradeOk;
-  return hasIngredients(chain, counts);
+  return hasIngredients(chain, counts, count);
+}
+
+function batchCount(count, maxBatch = 5) {
+  const n = Number(count ?? 1);
+  if (!Number.isInteger(n) || n < 1 || n > maxBatch) return null;
+  return n;
+}
+
+function wholesale(itemName) {
+  return Math.floor(catalog.materials?.[itemName]?.wholesale || 0);
+}
+
+function materialCost(chain, count = 1) {
+  if (!chain?.ingredients) return 0;
+  return chain.ingredients.reduce((sum, need) => sum + wholesale(need.item) * need.count * count, 0);
+}
+
+function rushPrice(chain, count = 1) {
+  let rush = Number(chain?.prices?.rush);
+  if (!rush || rush < 1) rush = Math.floor((chain?.prices?.restock || 0) * 2.4);
+  return Math.floor(rush) * count;
+}
+
+function craftDuration(chain, count = 1, minMs = 2500, batchScale = 0.55) {
+  const base = Math.max(Number(chain?.craftDuration) || 8000, minMs);
+  return Math.floor(base + (count - 1) * base * batchScale);
+}
+
+function validateCraft(payload, maxBatch = 5) {
+  if (!payload || typeof payload.id !== 'string') return [false, 'invalid'];
+  if (!catalog.chains[payload.id]) return [false, 'unknown_piece'];
+  if (batchCount(payload.count ?? 1, maxBatch) == null) return [false, 'count'];
+  if (payload.skipMaterials != null && ![true, false, 1, 0].includes(payload.skipMaterials)) return [false, 'invalid'];
+  return [true];
+}
+
+function validateSupplierBuy(payload, maxPerBuy = 50) {
+  if (!payload || typeof payload.item !== 'string' || !payload.item) return [false, 'invalid'];
+  if (!catalog.materials[payload.item]) return [false, 'unknown_piece'];
+  if (batchCount(payload.count ?? 1, maxPerBuy) == null) return [false, 'count'];
+  if (wholesale(payload.item) < 1) return [false, 'unknown_piece'];
+  return [true];
+}
+
+function recipeSignature(chain) {
+  return chain.ingredients.map((i) => `${i.item}:${i.count}`).sort().join('|');
 }
 
 function validateBuy(payload) {
@@ -171,6 +217,55 @@ test('craft accepts a full bench', () => {
   assert.equal(ok, true);
 });
 
+test('batch craft scales ingredients and duration', () => {
+  const trapper = catalog.chains.icebox_trapper;
+  assert.equal(hasIngredients(trapper, { icebox_gold_bar: 4, icebox_chain_links: 1 }, 2)[0], false);
+  assert.equal(hasIngredients(trapper, { icebox_gold_bar: 4, icebox_chain_links: 2 }, 2)[0], true);
+  assert.equal(craftDuration(trapper, 1), 8000);
+  assert.equal(craftDuration(trapper, 3), Math.floor(8000 + 2 * 8000 * 0.55));
+  assert.equal(batchCount(5, 5), 5);
+  assert.equal(batchCount(6, 5), null);
+  assert.equal(batchCount(0, 5), null);
+});
+
+test('every piece has a unique recipe and a rush surcharge', () => {
+  const seen = new Set();
+  for (const chain of Object.values(catalog.chains)) {
+    const sig = recipeSignature(chain);
+    assert.equal(seen.has(sig), false, `duplicate recipe ${chain.id} ${sig}`);
+    seen.add(sig);
+    const mats = materialCost(chain, 1);
+    const rush = rushPrice(chain, 1);
+    assert.ok(wholesale('icebox_gold_bar') === 1200);
+    assert.ok(rush > mats, `${chain.id} rush ${rush} should beat mats ${mats}`);
+    assert.ok(rush < chain.prices.retail, `${chain.id} rush should stay under retail`);
+  }
+});
+
+test('every material has wholesale and every chain has rush', () => {
+  for (const [name, mat] of Object.entries(catalog.materials)) {
+    assert.ok(mat.wholesale >= 1, name);
+  }
+  for (const chain of Object.values(catalog.chains)) {
+    assert.ok(chain.prices.rush >= 1, chain.id);
+  }
+});
+
+test('craft payload accepts batch and rush flag', () => {
+  assert.equal(validateCraft({ id: 'icebox_trapper', count: 3, skipMaterials: true })[0], true);
+  assert.equal(validateCraft({ id: 'icebox_trapper', count: 1, skipMaterials: false })[0], true);
+  assert.equal(validateCraft({ id: 'icebox_trapper', count: 9 })[1], 'count');
+  assert.equal(validateCraft({ id: 'weapon_pistol' })[1], 'unknown_piece');
+  assert.equal(validateCraft({ id: 'icebox_trapper', skipMaterials: 'yes' })[1], 'invalid');
+});
+
+test('supplier buy is material-only and qty-capped', () => {
+  assert.equal(validateSupplierBuy({ item: 'icebox_gold_bar', count: 10 })[0], true);
+  assert.equal(validateSupplierBuy({ item: 'icebox_trapper', count: 1 })[1], 'unknown_piece');
+  assert.equal(validateSupplierBuy({ item: 'icebox_gold_bar', count: 99 })[1], 'count');
+  assert.equal(validateSupplierBuy({ item: 'icebox_gold_bar', count: 1.5 })[1], 'count');
+});
+
 test('buy payload is whitelisted and qty-locked', () => {
   assert.equal(validateBuy({ id: 'icebox_trapper', count: 1 })[0], true);
   assert.equal(validateBuy({ id: 'weapon_pistol', count: 1 })[1], 'unknown_piece');
@@ -252,7 +347,10 @@ test('nui never trusts client-sent prices', () => {
   const app = readFileSync(join(root, 'html/app.js'), 'utf8');
   assert.ok(app.includes("post('buy', { id: item.id, count: 1 })"));
   assert.doesNotMatch(app, /post\('buy'.+retail/);
-  assert.ok(app.includes("post('craftStart', { id: item.id })"));
+  assert.ok(app.includes("post('craftStart', { id: item.id, count, skipMaterials: Boolean(skipMaterials) })"));
+  assert.doesNotMatch(app, /post\('craftStart'.+rush/);
+  assert.ok(app.includes("post('supplierBuy', { item: item.id, count })"));
+  assert.doesNotMatch(app, /post\('supplierBuy'.+wholesale/);
   assert.ok(app.includes("post('fence', { serials: [item.serial] })"));
 });
 
@@ -264,6 +362,12 @@ test('server rejects unknown pieces and token speedruns', () => {
   assert.ok(server.includes('AddMoney(source, \'cash\', price, \'icebox-retail-refund\')'));
   assert.ok(server.includes('hot_cannot_wear'));
   assert.ok(server.includes('nearPlayer'));
+  assert.ok(server.includes('out_of_stock'));
+  assert.ok(server.includes('skipMaterials'));
+  assert.ok(server.includes('supplierBuy'));
+  assert.ok(server.includes("RemoveItem(stash, itemName, 1"));
+  assert.ok(server.includes('stockedOnly'));
+  assert.ok(server.includes('icebox-rush'));
 });
 
 function locationCoords(loc) {
@@ -320,9 +424,13 @@ test('config uses rebel coords and dual showroom', () => {
   assert.ok(cfg.includes('-610.42'));
   assert.ok(cfg.includes('-605.79'));
   assert.ok(cfg.includes('-1471.96'));
+  assert.ok(cfg.includes('1234.42'));
   assert.ok(cfg.includes('Rebel Icebox'));
   assert.ok(cfg.includes('PedZOffset'));
   assert.ok(cfg.includes('storeDistance'));
+  assert.ok(cfg.includes('stockedOnly'));
+  assert.ok(cfg.includes('maxBatch'));
+  assert.ok(cfg.includes('rushEnabled'));
 });
 
 test('locationCoords reads FiveM vector userdata xyz', () => {

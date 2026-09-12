@@ -8,6 +8,7 @@
     selected: null,
     data: null,
     crafting: false,
+    qty: 1,
   };
 
   const els = {
@@ -34,6 +35,7 @@
   const titles = {
     showroom: ['Showroom', 'Pick your ice'],
     workshop: ['Workshop', 'Cut it. Set it. Ice it.'],
+    supplier: ['Supplier', 'Buy the bench stock'],
     owned: ['Vault drawer', 'What you walk with'],
     fence: ['Quiet buyer', 'No questions. Fast cash.'],
   };
@@ -45,6 +47,22 @@
     iced: '✦',
     exclusive: '◆',
     legendary: '✧',
+  };
+
+  const REASONS = {
+    out_of_stock: 'That piece is not in the showcase.',
+    missing_ingredients: "You're short on materials.",
+    cannot_afford: "You don't have the cash.",
+    inventory_full: "You can't carry that.",
+    grade_required: 'Your bench grade is too low.',
+    craft_busy: "Finish the piece you're already on.",
+    invalid_count: 'That quantity is not allowed.',
+    duty_required: 'Clock in first.',
+    job_required: "You don't work at Icebox.",
+    too_far: "You're too far away.",
+    rush_disabled: 'Rush craft is turned off.',
+    slow_down: 'Easy. Slow down.',
+    exploit: 'Action rejected.',
   };
 
   function itemImage(id) {
@@ -65,7 +83,7 @@
   }
 
   function toast(text, kind) {
-    els.toast.textContent = text;
+    els.toast.textContent = REASONS[text] || text;
     els.toast.classList.remove('hidden');
     els.toast.style.borderColor = kind === 'error' ? 'rgba(255,75,75,0.55)' : 'rgba(232,184,74,0.45)';
     clearTimeout(toast._t);
@@ -76,12 +94,37 @@
     return (state.data && state.data.catalog) || [];
   }
 
+  function supplierCatalog() {
+    return (state.data && state.data.supplierCatalog) || [];
+  }
+
   function rarities() {
     return (state.data && state.data.rarities) || {};
   }
 
   function owned() {
     return (state.data && state.data.owned) || [];
+  }
+
+  function materials() {
+    return (state.data && state.data.materials) || {};
+  }
+
+  function stockOf(id) {
+    const stock = (state.data && state.data.stock) || {};
+    return Number(stock[id] || 0);
+  }
+
+  function maxBatch() {
+    return Number((state.data && state.data.maxBatch) || 5);
+  }
+
+  function maxSupplierBuy() {
+    return Number((state.data && state.data.maxSupplierBuy) || 50);
+  }
+
+  function rushEnabled() {
+    return !state.data || state.data.rushEnabled !== false;
   }
 
   function isEmployee() {
@@ -92,12 +135,32 @@
     return catalog().find((c) => c.id === id);
   }
 
+  function materialById(id) {
+    return supplierCatalog().find((m) => m.id === id);
+  }
+
+  function qtyCap() {
+    if (state.view === 'supplier') return maxSupplierBuy();
+    if (state.view === 'workshop') return maxBatch();
+    return 1;
+  }
+
+  function clampQty() {
+    const cap = qtyCap();
+    const n = Math.floor(Number(state.qty) || 1);
+    state.qty = Math.min(cap, Math.max(1, n));
+    return state.qty;
+  }
+
   function visibleItems() {
     if (state.view === 'owned') {
       return owned().filter((p) => state.filter === 'all' || p.rarity === state.filter || (state.filter === 'hot' && p.hot));
     }
     if (state.view === 'fence') {
       return owned().filter((p) => p.hot);
+    }
+    if (state.view === 'supplier') {
+      return supplierCatalog();
     }
     return catalog().filter((c) => {
       if (state.view === 'workshop' && c.category === 'watch' && state.filter === 'chain') return false;
@@ -118,22 +181,34 @@
   }
 
   function renderNav() {
+    const opened = state.data && state.data.view;
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       const view = btn.dataset.view;
       btn.classList.toggle('active', view === state.view);
-      if (btn.dataset.employee && !isEmployee() && !(!isNui)) {
-        btn.style.display = isEmployee() || !isNui ? '' : 'none';
+      btn.style.display = '';
+      if (btn.dataset.employee && isNui && !isEmployee()) {
+        btn.style.display = 'none';
       }
       if (btn.dataset.fence) {
-        btn.style.display = state.view === 'fence' || (!isNui && view === 'fence') ? '' : (state.data && state.data.view === 'fence' ? '' : 'none');
+        btn.style.display = opened === 'fence' || (!isNui && view === 'fence') ? '' : 'none';
       }
-      if (state.data && state.data.view === 'fence') {
+      if (btn.dataset.supplier) {
+        btn.style.display = opened === 'supplier' || (!isNui && view === 'supplier') ? '' : 'none';
+      }
+      if (opened === 'fence') {
         btn.style.display = view === 'fence' || view === 'owned' ? '' : 'none';
+      }
+      if (opened === 'supplier') {
+        btn.style.display = view === 'supplier' || view === 'owned' ? '' : 'none';
       }
     });
   }
 
   function renderFilters() {
+    if (state.view === 'supplier') {
+      els.filters.innerHTML = '';
+      return;
+    }
     const chips = ['all', 'street', 'iced', 'exclusive', 'legendary'];
     if (state.view === 'owned' || state.view === 'fence') chips.push('hot');
     els.filters.innerHTML = '';
@@ -150,13 +225,27 @@
     });
   }
 
+  function cardSubtitle(item) {
+    if (state.view === 'supplier') return money(item.wholesale);
+    if (state.view === 'showroom') {
+      const stock = stockOf(item.id);
+      return `${money((item.prices && item.prices.retail) || 0)} · ${stock} in case`;
+    }
+    if (item.serial) return item.serial;
+    return money((item.prices && item.prices.retail) || item.fencePrice || 0);
+  }
+
   function renderCards() {
     const items = visibleItems();
     els.cards.innerHTML = '';
     if (!items.length) {
       const empty = document.createElement('p');
       empty.className = 'empty';
-      empty.textContent = state.view === 'fence' ? 'Nothing hot in your pockets.' : 'Nothing in this case.';
+      empty.textContent = state.view === 'fence'
+        ? 'Nothing hot in your pockets.'
+        : state.view === 'supplier'
+          ? 'No materials listed.'
+          : 'Nothing in this case.';
       els.cards.appendChild(empty);
       return;
     }
@@ -165,19 +254,22 @@
       const card = document.createElement('button');
       card.type = 'button';
       card.className = `card${state.selected === id ? ' selected' : ''}`;
-      const rarity = item.rarity || 'street';
+      const rarity = item.rarity || (state.view === 'supplier' ? 'stock' : 'street');
+      const out = state.view === 'showroom' && stockOf(id) < 1;
+      if (out) card.classList.add('sold-out');
       card.innerHTML = `
-        <span class="badge">${item.hot ? 'Snatched' : rarity}</span>
+        <span class="badge">${item.hot ? 'Snatched' : out ? 'Out of stock' : rarity}</span>
         <div class="thumb">
           <img src="${itemImage(id)}" alt="${item.label}" onerror="this.style.display='none'; var n=this.nextElementSibling; if(n) n.classList.remove('hidden');" />
           <div class="mark hidden">${glyphs[rarity] || glyphs[item.category] || '◆'}</div>
         </div>
         <h4>${item.label}</h4>
-        <p>${item.serial ? item.serial : money((item.prices && item.prices.retail) || item.fencePrice || 0)}</p>
+        <p>${cardSubtitle(item)}</p>
       `;
       card.addEventListener('click', () => {
         state.selected = id;
         state.selectedItem = item;
+        state.qty = 1;
         render();
       });
       els.cards.appendChild(card);
@@ -192,7 +284,42 @@
     if (state.view === 'owned' || state.view === 'fence') {
       return owned().find((p) => p.id === state.selected && (!state.selectedItem || p.serial === state.selectedItem.serial)) || owned().find((p) => p.id === state.selected);
     }
+    if (state.view === 'supplier') {
+      return materialById(state.selected);
+    }
     return chainById(state.selected);
+  }
+
+  function prettyItem(name) {
+    return String(name || '').replace('icebox_', '').replace(/_/g, ' ');
+  }
+
+  function addQtyRow() {
+    clampQty();
+    const row = document.createElement('div');
+    row.className = 'qty';
+    const minus = document.createElement('button');
+    minus.type = 'button';
+    minus.className = 'qty-btn';
+    minus.textContent = '−';
+    minus.disabled = state.crafting || state.qty <= 1;
+    minus.addEventListener('click', () => {
+      state.qty = Math.max(1, state.qty - 1);
+      renderDetail();
+    });
+    const label = document.createElement('span');
+    label.textContent = `${state.qty} / ${qtyCap()}`;
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'qty-btn';
+    plus.textContent = '+';
+    plus.disabled = state.crafting || state.qty >= qtyCap();
+    plus.addEventListener('click', () => {
+      state.qty = Math.min(qtyCap(), state.qty + 1);
+      renderDetail();
+    });
+    row.append(minus, label, plus);
+    els.detailActions.appendChild(row);
   }
 
   function renderDetail() {
@@ -224,9 +351,11 @@
         els.glyph.classList.remove('hidden');
       };
     }
-    els.detailRarity.textContent = item.hot ? 'Snatched' : (rarity.label || item.rarity);
+    els.detailRarity.textContent = item.hot ? 'Snatched' : (rarity.label || (state.view === 'supplier' ? 'Wholesale' : item.rarity));
     els.detailTitle.textContent = item.label;
-    els.detailCopy.textContent = item.description || (item.hot ? 'Hot ice. The quiet buyer will take it off your hands.' : '');
+    els.detailCopy.textContent = item.description || (state.view === 'supplier'
+      ? 'Icebox employees buy metals and stones here. Nothing restocks the store by itself.'
+      : item.hot ? 'Hot ice. The quiet buyer will take it off your hands.' : '');
     els.detailMeta.innerHTML = '';
 
     const rows = [];
@@ -234,8 +363,20 @@
     if (item.gradeRequired != null && state.view === 'workshop') rows.push(['Bench grade', String(item.gradeRequired)]);
     if (item.serial) rows.push(['Serial', item.serial]);
     if (item.infusion) rows.push(['Infusion', item.infusion.replace('icebox_', '')]);
-    if (item.ingredients) {
-      rows.push(['Materials', item.ingredients.map((i) => `${i.count}× ${i.item.replace('icebox_', '').replace(/_/g, ' ')}`).join(', ')]);
+    if (state.view === 'showroom') rows.push(['In showcase', String(stockOf(item.id))]);
+    if (item.ingredients && state.view === 'workshop') {
+      const counts = materials();
+      const qty = clampQty();
+      rows.push(['Materials', item.ingredients.map((i) => {
+        const need = i.count * qty;
+        const have = Number(counts[i.item] || 0);
+        return `${need}× ${prettyItem(i.item)} (${have} on you)`;
+      }).join(', ')]);
+    }
+    if (state.view === 'workshop' && item.craftDuration) {
+      const extra = (clampQty() - 1) * 0.55;
+      const ms = Math.floor((item.craftDuration || 8000) * (1 + extra));
+      rows.push(['Bench time', `${Math.round(ms / 100) / 10}s`]);
     }
     rows.forEach(([k, v]) => {
       const li = document.createElement('li');
@@ -243,21 +384,40 @@
       els.detailMeta.appendChild(li);
     });
 
-    const retail = item.prices ? item.prices.retail : item.fencePrice;
-    els.detailPrice.textContent = money(retail || 0);
-    els.detailNote.textContent = state.view === 'fence' ? 'dirty money rate' : state.view === 'workshop' ? 'retail once it leaves the bench' : 'out-the-door';
+    const qty = clampQty();
+    if (state.view === 'supplier') {
+      els.detailPrice.textContent = money((item.wholesale || 0) * qty);
+      els.detailNote.textContent = `${money(item.wholesale)} each · employee cash`;
+    } else if (state.view === 'workshop') {
+      const rush = item.prices ? item.prices.rush : 0;
+      els.detailPrice.textContent = money((item.prices && item.prices.retail) || 0);
+      els.detailNote.textContent = rushEnabled() ? `rush ${money((rush || 0) * qty)} · no mats` : 'retail once it leaves the bench';
+    } else {
+      const retail = item.prices ? item.prices.retail : item.fencePrice;
+      els.detailPrice.textContent = money(retail || 0);
+      els.detailNote.textContent = state.view === 'fence' ? 'dirty money rate' : 'out-the-door · stocked pieces only';
+    }
 
     els.detailActions.innerHTML = '';
     if (state.view === 'showroom') {
-      addAction('Cop this piece', 'primary', () => buy(item));
+      const empty = stockOf(item.id) < 1;
+      addAction(empty ? 'Out of stock' : 'Cop this piece', 'primary', () => buy(item), empty);
     } else if (state.view === 'workshop') {
       const job = state.data && state.data.job;
       const locked = job && item.gradeRequired > (job.grade || 0);
-      addAction(locked ? 'Grade too low' : 'Craft', 'primary', () => craft(item), locked || state.crafting);
+      addQtyRow();
+      addAction(locked ? 'Grade too low' : (qty > 1 ? `Craft ${qty}×` : 'Craft from mats'), 'primary', () => craft(item, false), locked || state.crafting);
+      if (rushEnabled()) {
+        const rush = (item.prices && item.prices.rush) || 0;
+        addAction(`Rush ${money(rush * qty)}`, '', () => craft(item, true), locked || state.crafting);
+      }
       const infusions = state.data && state.data.infusions ? Object.keys(state.data.infusions) : [];
       infusions.forEach((inf) => {
-        addAction(`Infuse ${state.data.infusions[inf].label}`, '', () => infuse(item, inf));
+        addAction(`Infuse ${state.data.infusions[inf].label}`, '', () => infuse(item, inf), state.crafting);
       });
+    } else if (state.view === 'supplier') {
+      addQtyRow();
+      addAction(`Buy ${qty}×`, 'primary', () => supplierBuy(item));
     } else if (state.view === 'owned') {
       addAction(item.worn ? 'Take off' : 'Wear', 'primary', () => wear(item));
     } else if (state.view === 'fence') {
@@ -279,12 +439,25 @@
     if (res.ok) {
       toast(`You copped ${item.label}`);
       if (res.owned) state.data.owned = res.owned;
+      if (res.stock) state.data.stock = res.stock;
+      render();
     } else toast(res.reason || 'Could not buy', 'error');
   }
 
-  async function craft(item) {
+  async function supplierBuy(item) {
+    const count = clampQty();
+    const res = await post('supplierBuy', { item: item.id, count });
+    if (res.ok) {
+      toast(`Bought ${count}× ${item.label}`);
+      if (res.materials) state.data.materials = res.materials;
+      render();
+    } else toast(res.reason || 'Could not buy materials', 'error');
+  }
+
+  async function craft(item, skipMaterials) {
     if (state.crafting) return;
-    const start = await post('craftStart', { id: item.id });
+    const count = clampQty();
+    const start = await post('craftStart', { id: item.id, count, skipMaterials: Boolean(skipMaterials) });
     if (!start.ok) {
       toast(start.reason || 'Craft blocked', 'error');
       return;
@@ -312,8 +485,9 @@
     await post('stopAnim', {});
     state.crafting = false;
     if (finish.ok) {
-      toast(`Finished ${item.label}`);
+      toast(finish.count > 1 ? `Finished ${finish.count}× ${item.label}` : `Finished ${item.label}`);
       if (finish.owned) state.data.owned = finish.owned;
+      if (finish.materials) state.data.materials = finish.materials;
     } else toast(finish.reason || 'Craft failed', 'error');
     render();
   }
@@ -368,6 +542,7 @@
     state.filter = 'all';
     state.selected = null;
     state.crafting = false;
+    state.qty = 1;
     els.app.classList.remove('hidden');
     els.app.dataset.view = state.view;
     render();
@@ -394,9 +569,14 @@
       toast('See the quiet buyer in person', 'error');
       return;
     }
+    if (view === 'supplier' && isNui && state.data && state.data.view !== 'supplier') {
+      toast('See the supplier at the docks', 'error');
+      return;
+    }
     state.view = view;
     state.filter = 'all';
     state.selected = null;
+    state.qty = 1;
     render();
   });
 
@@ -411,16 +591,47 @@
     { id: 'icebox_sharky', label: 'Sharky', category: 'chain', rarity: 'legendary', slot: 4, serial: 'IB-DEMO-9981', worn: false, hot: true, fencePrice: 18360 },
   ];
 
+  const DEMO_STOCK = {
+    icebox_trapper: 2,
+    icebox_block_baby: 0,
+    icebox_smokey: 1,
+    icebox_self_made: 0,
+  };
+
+  const DEMO_MATERIALS = {
+    icebox_gold_bar: 6,
+    icebox_silver_bar: 2,
+    icebox_platinum_bar: 1,
+    icebox_diamond: 4,
+    icebox_ruby: 1,
+    icebox_chain_links: 8,
+    icebox_polish: 3,
+  };
+
+  let lastCraftCount = 1;
+
   function mock(name, payload) {
     if (name === 'close') return Promise.resolve({ ok: true });
     if (name === 'buy') {
+      const stock = Number(DEMO_STOCK[payload.id] || 0);
+      if (stock < 1) return Promise.resolve({ ok: false, reason: 'out_of_stock' });
+      DEMO_STOCK[payload.id] = stock - 1;
       toast(`Demo copped ${payload.id}`);
-      return Promise.resolve({ ok: true, owned: DEMO_OWNED });
+      return Promise.resolve({ ok: true, owned: DEMO_OWNED, stock: { ...DEMO_STOCK } });
     }
-    if (name === 'craftStart') return Promise.resolve({ ok: true, token: 'demo', duration: 1200, label: payload.id });
+    if (name === 'supplierBuy') {
+      const item = payload.item;
+      DEMO_MATERIALS[item] = (DEMO_MATERIALS[item] || 0) + (payload.count || 1);
+      return Promise.resolve({ ok: true, materials: { ...DEMO_MATERIALS } });
+    }
+    if (name === 'craftStart') {
+      lastCraftCount = payload.count || 1;
+      const duration = 800 + lastCraftCount * 400;
+      return Promise.resolve({ ok: true, token: 'demo', duration, label: payload.id, count: lastCraftCount });
+    }
     if (name === 'craftFinish') {
       toast('Demo craft complete');
-      return Promise.resolve({ ok: true, owned: DEMO_OWNED });
+      return Promise.resolve({ ok: true, owned: DEMO_OWNED, count: lastCraftCount, materials: { ...DEMO_MATERIALS } });
     }
     if (name === 'toggleWear') {
       const piece = DEMO_OWNED.find((p) => p.id === payload.id);
@@ -449,6 +660,13 @@
     if (isNui) return;
     document.body.classList.add('demo');
     const catalogRes = await fetch('../data/catalog.json').then((r) => r.json());
+    const supplierCatalogList = Object.entries(catalogRes.materials).map(([id, mat]) => ({
+      id,
+      item: id,
+      label: mat.label,
+      wholesale: mat.wholesale,
+      weight: mat.weight,
+    })).sort((a, b) => a.label.localeCompare(b.label));
     open({
       ok: true,
       view: 'showroom',
@@ -465,7 +683,7 @@
         gradeRequired: c.gradeRequired,
         craftDuration: c.craftDuration,
         ingredients: c.ingredients,
-        prices: { retail: c.prices.retail },
+        prices: { retail: c.prices.retail, rush: c.prices.rush },
         slot: c.wear.slot,
       })),
       rarities: catalogRes.rarities,
@@ -474,6 +692,13 @@
       business: catalogRes.business,
       wearEnabled: true,
       wearVisual: true,
+      materials: { ...DEMO_MATERIALS },
+      supplierCatalog: supplierCatalogList,
+      stock: { ...DEMO_STOCK },
+      maxBatch: 5,
+      rushEnabled: true,
+      maxSupplierBuy: 50,
+      stockedOnly: true,
     });
   }
 

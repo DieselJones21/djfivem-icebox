@@ -57,18 +57,93 @@ function IceboxLogic.canCraftGrade(chain, grade)
     return true
 end
 
+---@param count any
+---@param maxBatch integer|nil
+---@return integer|nil
+function IceboxLogic.batchCount(count, maxBatch)
+    count = tonumber(count) or 1
+    maxBatch = tonumber(maxBatch) or 5
+    if count ~= math.floor(count) or count < 1 or count > maxBatch then
+        return nil
+    end
+    return count
+end
+
+---@param chain table
+---@param count integer|nil
+---@return table[]
+function IceboxLogic.scaledIngredients(chain, count)
+    count = count or 1
+    local out = {}
+    if not chain or type(chain.ingredients) ~= 'table' then return out end
+    for i = 1, #chain.ingredients do
+        local need = chain.ingredients[i]
+        out[i] = { item = need.item, count = (need.count or 0) * count }
+    end
+    return out
+end
+
+---@param itemName string
+---@return integer
+function IceboxLogic.wholesale(itemName)
+    local mat = IceboxCatalog.materials and IceboxCatalog.materials[itemName]
+    if not mat then return 0 end
+    return math.floor(tonumber(mat.wholesale) or 0)
+end
+
+---@param chain table
+---@param count integer|nil
+---@return integer
+function IceboxLogic.materialCost(chain, count)
+    count = count or 1
+    if not chain or type(chain.ingredients) ~= 'table' then return 0 end
+    local total = 0
+    for i = 1, #chain.ingredients do
+        local need = chain.ingredients[i]
+        total = total + IceboxLogic.wholesale(need.item) * (need.count or 0) * count
+    end
+    return total
+end
+
+---@param chain table
+---@param count integer|nil
+---@return integer
+function IceboxLogic.rushPrice(chain, count)
+    count = count or 1
+    if not chain or not chain.prices then return 0 end
+    local rush = tonumber(chain.prices.rush)
+    if not rush or rush < 1 then
+        rush = math.floor((chain.prices.restock or 0) * 2.4)
+    end
+    return math.floor(rush) * count
+end
+
+---@param chain table
+---@param count integer|nil
+---@param minMs integer|nil
+---@param batchScale number|nil
+---@return integer
+function IceboxLogic.craftDuration(chain, count, minMs, batchScale)
+    count = count or 1
+    local base = math.max(tonumber(chain and chain.craftDuration) or 8000, minMs or 2500)
+    batchScale = batchScale or 0.55
+    return math.floor(base + (count - 1) * base * batchScale)
+end
+
 ---@param chain table
 ---@param counts table<string, integer>
+---@param count integer|nil
 ---@return boolean, string|nil
-function IceboxLogic.hasIngredients(chain, counts)
+function IceboxLogic.hasIngredients(chain, counts, count)
     if not chain or type(chain.ingredients) ~= 'table' then
         return false, 'unknown_piece'
     end
     counts = counts or {}
+    count = count or 1
     for i = 1, #chain.ingredients do
         local need = chain.ingredients[i]
         local have = tonumber(counts[need.item]) or 0
-        if have < (need.count or 0) then
+        if have < (need.count or 0) * count then
             return false, 'ingredients'
         end
     end
@@ -78,11 +153,12 @@ end
 ---@param chain table
 ---@param grade integer
 ---@param counts table<string, integer>
+---@param count integer|nil
 ---@return boolean, string|nil
-function IceboxLogic.canCraft(chain, grade, counts)
+function IceboxLogic.canCraft(chain, grade, counts, count)
     local ok, reason = IceboxLogic.canCraftGrade(chain, grade)
     if not ok then return false, reason end
-    return IceboxLogic.hasIngredients(chain, counts)
+    return IceboxLogic.hasIngredients(chain, counts, count)
 end
 
 ---@param chain table
@@ -108,12 +184,37 @@ function IceboxLogic.validateBuy(payload)
     return true
 end
 
+---@param value any
+---@return boolean
+function IceboxLogic.wantsRush(value)
+    return value == true or value == 1
+end
+
 ---@param payload table
 ---@return boolean, string|nil
-function IceboxLogic.validateCraft(payload)
+function IceboxLogic.validateCraft(payload, maxBatch)
     if type(payload) ~= 'table' then return false, 'invalid' end
     if type(payload.id) ~= 'string' then return false, 'invalid' end
     if not IceboxCatalog.get(payload.id) then return false, 'unknown_piece' end
+    if IceboxLogic.batchCount(payload.count or 1, maxBatch or 5) == nil then
+        return false, 'count'
+    end
+    if payload.skipMaterials ~= nil and payload.skipMaterials ~= true and payload.skipMaterials ~= false and payload.skipMaterials ~= 1 and payload.skipMaterials ~= 0 then
+        return false, 'invalid'
+    end
+    return true
+end
+
+---@param payload table
+---@param maxPerBuy integer|nil
+---@return boolean, string|nil
+function IceboxLogic.validateSupplierBuy(payload, maxPerBuy)
+    if type(payload) ~= 'table' then return false, 'invalid' end
+    if type(payload.item) ~= 'string' or payload.item == '' then return false, 'invalid' end
+    if not IceboxCatalog.isMaterial(payload.item) then return false, 'unknown_piece' end
+    local qty = IceboxLogic.batchCount(payload.count or 1, maxPerBuy or 50)
+    if not qty then return false, 'count' end
+    if IceboxLogic.wholesale(payload.item) < 1 then return false, 'unknown_piece' end
     return true
 end
 

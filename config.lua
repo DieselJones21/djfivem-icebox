@@ -52,13 +52,28 @@ Config.Showroom = {
     distance = 4.0,
     storeDistance = 16.0,
     maxBuy = 1,
+    --- Customers only receive pieces employees put in the showcase. No spawned stock.
+    stockedOnly = true,
 }
 
 Config.Craft = {
     distance = 4.0,
     --- Hard cap so a stalled progress bar cannot be completed instantly by a cheater.
     minDurationMs = 2500,
+    --- One workshop session at a time. Count is how many pieces that session cuts.
     maxQueue = 1,
+    maxBatch = 5,
+    --- Extra pieces add this fraction of the base craft time each (not a full 5x wait).
+    batchScale = 0.55,
+    rushEnabled = true,
+}
+
+Config.Supplier = {
+    enabled = true,
+    distance = 2.5,
+    maxPerBuy = 50,
+    jobOnly = true,
+    requireDuty = true,
 }
 
 Config.RateLimits = {
@@ -70,6 +85,7 @@ Config.RateLimits = {
     snatchStart = 3000,
     snatchFinish = 1000,
     duty = 1500,
+    supplier = 800,
 }
 
 --- Interaction radius used for every server distance check (added on top of location distance).
@@ -147,6 +163,22 @@ Config.Locations = {
             color = 1,
             scale = 0.6,
             label = 'Quiet Buyer',
+        },
+    },
+    --- Wholesale metals / stones. Icebox employees buy craft stock here, not at the store.
+    supplier = {
+        enabled = true,
+        model = `s_m_y_dockwork_01`,
+        coords = vec4(1234.42, -3204.91, 5.63, 271.18),
+        zOffset = 1.0,
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        blip = {
+            enabled = true,
+            sprite = 478,
+            color = 5,
+            scale = 0.7,
+            label = 'Icebox Supplier',
+            jobOnly = true,
         },
     },
 }
