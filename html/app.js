@@ -407,8 +407,8 @@
   });
 
   const DEMO_OWNED = [
-    { id: 'icebox_cuban_gold', label: 'Cuban Link Gold', category: 'chain', rarity: 'iced', slot: 3, serial: 'IB-DEMO-4412', worn: true, hot: false, fencePrice: null },
-    { id: 'icebox_diamond_cuban', label: 'Diamond Cuban', category: 'chain', rarity: 'legendary', slot: 4, serial: 'IB-DEMO-9981', worn: false, hot: true, fencePrice: 18360 },
+    { id: 'icebox_self_made', label: 'Self Made', category: 'chain', rarity: 'iced', slot: 3, serial: 'IB-DEMO-4412', worn: true, hot: false, fencePrice: null },
+    { id: 'icebox_sharky', label: 'Sharky', category: 'chain', rarity: 'legendary', slot: 4, serial: 'IB-DEMO-9981', worn: false, hot: true, fencePrice: 18360 },
   ];
 
   function mock(name, payload) {
@@ -454,7 +454,7 @@
       view: 'showroom',
       job: { name: 'icebox', grade: 4, gradeName: 'Owner', onduty: true, isIcebox: true, isBoss: true },
       isEmployee: true,
-      wear: { chain: 'icebox_cuban_gold', watch: null },
+      wear: { chain: 'icebox_self_made', watch: null },
       catalog: Object.values(catalogRes.chains).map((c) => ({
         id: c.id,
         item: c.item,

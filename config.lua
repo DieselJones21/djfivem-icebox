@@ -15,7 +15,9 @@ Config.RequireDuty = true
 Config.RequireEmployeeForPurchase = false
 
 --- Visual wearing uses GTA accessory/prop indexes from data/catalog.json.
---- Custom chain packs: change each chain's wear.male / wear.female drawable IDs.
+--- Male Icebox pack is component 7 drawables 278-287 (Smokey uses texture 0 and 2).
+--- Female chains are not in this update — wear.female is omitted so female peds skip the visual.
+--- Start your chain clothing stream resource before dj-icebox.
 --- Set visual = false to run item-only equip (snatch still works, no clothing change).
 Config.Wear = {
     enabled = true,
