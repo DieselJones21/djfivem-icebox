@@ -186,19 +186,24 @@ ITEMS = {
     "icebox_chain_links": ("chain", SILVER),
     "icebox_polish": ("polish", GOLD),
     "icebox_tester": ("tester", SILVER),
-    "icebox_rope_silver": ("chain", SILVER),
-    "icebox_figaro_gold": ("chain", GOLD),
-    "icebox_cuban_gold": ("thick", GOLD),
-    "icebox_cuban_silver": ("thick", SILVER),
-    "icebox_crossed_out": ("cross", GOLD),
-    "icebox_tennis_ice": ("tennis", GOLD),
-    "icebox_medallion": ("medallion", GOLD),
-    "icebox_diamond_cuban": ("diamond", GOLD),
-    "icebox_infinity": ("infinity", PLAT),
-    "icebox_boss": ("boss", GOLD),
     "icebox_watch_steel": ("watch", SILVER),
     "icebox_watch_gold": ("watch", GOLD),
 }
+
+CHAIN_PHOTOS = [
+    "icebox_trapper",
+    "icebox_block_baby",
+    "icebox_smokey",
+    "icebox_smokey_2",
+    "icebox_self_made",
+    "icebox_dumb_rich",
+    "icebox_face_shot",
+    "icebox_slime",
+    "icebox_est",
+    "icebox_sharky",
+    "icebox_capalot",
+]
+
 
 
 def draw(kind: str, metal: tuple[int, int, int]) -> Canvas:
@@ -239,7 +244,19 @@ def main() -> None:
         data = draw(kind, metal).to_png()
         for out in OUTS:
             (out / f"{name}.png").write_bytes(data)
-    print(f"wrote {len(ITEMS)} icons to {', '.join(str(p) for p in OUTS)}")
+    photos = 0
+    for name in CHAIN_PHOTOS:
+        dest = OUTS[0] / f"{name}.png"
+        if dest.exists():
+            data = dest.read_bytes()
+            for out in OUTS[1:]:
+                (out / f"{name}.png").write_bytes(data)
+            photos += 1
+        else:
+            raise SystemExit(
+                f"missing chain icon for {name}. Run tests/process_chain_icons.py to cut transparent icons."
+            )
+    print(f"wrote {len(ITEMS)} stock icons and synced {photos} chain icons to {', '.join(str(p) for p in OUTS)}")
 
 
 if __name__ == "__main__":

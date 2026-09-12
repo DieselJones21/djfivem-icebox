@@ -7,7 +7,7 @@ Rebel Roleplay jewelry business for **qbx_core**, **ox_lib**, **ox_inventory**, 
 - Icebox job (Apprentice → Owner) with duty, vault, showcase stash, and boss menu
 - Showroom NUI to browse and buy serialized pieces
 - Workshop NUI to craft from materials and infuse diamonds/rubies
-- Wearable chains and watches (GTA accessory component / watch prop)
+- Wearable male Icebox chains (component 7 drawables 278–287) plus watches
 - ox_target snatch on players who are actually wearing a chain
 - Fence ped that only buys snatched (`hot`) pieces
 - Diamond tester to inspect someone else's neck
@@ -15,17 +15,32 @@ Rebel Roleplay jewelry business for **qbx_core**, **ox_lib**, **ox_inventory**, 
 
 ## Wearables
 
-Chains use **clothing component 7** (accessories). Watches use **prop 6**. Default drawable IDs are vanilla freemode values so the script works without a custom chain pack.
+Chains use **clothing component 7** (accessories) on **male** freemode only this update. Watches use **prop 6**.
 
-If you stream a chain clothing pack, open `data/catalog.json` and set each piece's `wear.male` / `wear.female` `drawable` / `texture` to that pack's numbers.
+The live Icebox book is the custom male pack:
 
-```json
-"wear": {
-  "slot": "chain",
-  "male": { "type": "component", "id": 7, "drawable": 22, "texture": 0 },
-  "female": { "type": "component", "id": 7, "drawable": 22, "texture": 0 }
-}
+| Item | Label | Drawable | Texture |
+| --- | --- | ---: | ---: |
+| `icebox_trapper` | Trapper Chain | 278 | 0 |
+| `icebox_block_baby` | Block Baby | 279 | 0 |
+| `icebox_smokey` | Smokey | 280 | 0 |
+| `icebox_smokey_2` | Smokey 2 | 280 | 2 |
+| `icebox_self_made` | Self Made | 281 | 0 |
+| `icebox_dumb_rich` | Dumb Rich | 282 | 0 |
+| `icebox_face_shot` | Face Shot | 283 | 0 |
+| `icebox_slime` | Slime | 284 | 0 |
+| `icebox_est` | EST | 285 | 0 |
+| `icebox_sharky` | Sharky | 286 | 0 |
+| `icebox_capalot` | Capalot | 287 | 0 |
+
+Start the clothing stream resource **before** `dj-icebox` so those drawables exist:
+
+```cfg
+ensure icebox_chains
+ensure dj-icebox
 ```
+
+Rename `icebox_chains` if your pack folder is named something else. Female chain visuals are not in this drop — using a chain on a female ped still equips the item (snatch/tester work) but does not change clothing.
 
 To run **item-only** (no clothing change) while you source a pack:
 
@@ -39,13 +54,14 @@ Snatched pieces are flagged `hot` and cannot be worn (`Config.Wear.allowHot = fa
 
 ## Install
 
-1. Drop this folder into `resources` as `dj-icebox`.
+1. Drop this folder into `resources` as **`dj-icebox` only**. Do not also start `djfivem-icebox` — two copies spawn double peds and ox_lib callback errors.
 2. Merge `install/job.lua` into `qbx_core/shared/jobs.lua`.
-3. Merge `install/items.lua` into `ox_inventory/data/items.lua`.
-4. Copy `install/images/*.png` into `ox_inventory/web/images/`.
-5. Add to `server.cfg` **after** ox_lib, qbx_core, ox_inventory, ox_target:
+3. Merge `install/items.lua` into `ox_inventory/data/items.lua` (replace any old Icebox chain names — vanilla placeholders are gone).
+4. Copy `install/images/*.png` into `ox_inventory/web/images/`. Chain icons are small transparent cutouts of the pack photos.
+5. Add to `server.cfg` **after** ox_lib, qbx_core, ox_inventory, ox_target. Start the clothing pack first:
 
 ```cfg
+ensure icebox_chains
 ensure dj-icebox
 ```
 

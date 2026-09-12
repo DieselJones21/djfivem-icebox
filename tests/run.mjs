@@ -105,7 +105,12 @@ test('catalog has unique chain keys matching ids', () => {
     assert.ok(['chain', 'watch'].includes(chain.category));
     assert.ok(catalog.rarities[chain.rarity]);
     assert.ok(chain.wear?.male?.drawable != null);
-    assert.ok(chain.wear?.female?.drawable != null);
+    if (chain.category === 'watch') {
+      assert.ok(chain.wear?.female?.drawable != null);
+    } else {
+      assert.equal(chain.wear.male.type, 'component');
+      assert.equal(chain.wear.male.id, 7);
+    }
     assert.ok(retailPrice(chain) > 0);
     assert.ok(chain.prices.restock < chain.prices.retail);
     assert.ok(Array.isArray(chain.ingredients) && chain.ingredients.length > 0);
@@ -117,39 +122,69 @@ test('catalog has unique chain keys matching ids', () => {
   assert.ok(ids.length >= 10);
 });
 
-test('boss chain is owner-gated', () => {
-  const boss = catalog.chains.icebox_boss;
-  assert.equal(canCraftGrade(boss, 3)[0], false);
-  assert.equal(canCraftGrade(boss, 4)[0], true);
+const MALE_PACK = {
+  icebox_trapper: [278, 0],
+  icebox_block_baby: [279, 0],
+  icebox_smokey: [280, 0],
+  icebox_smokey_2: [280, 2],
+  icebox_self_made: [281, 0],
+  icebox_dumb_rich: [282, 0],
+  icebox_face_shot: [283, 0],
+  icebox_slime: [284, 0],
+  icebox_est: [285, 0],
+  icebox_sharky: [286, 0],
+  icebox_capalot: [287, 0],
+};
+
+test('male chain pack uses accessory 7 drawables 278-287', () => {
+  const seen = new Set();
+  for (const [id, [drawable, texture]] of Object.entries(MALE_PACK)) {
+    const chain = catalog.chains[id];
+    assert.ok(chain, id);
+    assert.equal(chain.category, 'chain');
+    assert.equal(chain.wear.male.drawable, drawable);
+    assert.equal(chain.wear.male.texture, texture);
+    assert.equal(chain.wear.female, undefined);
+    const key = `${drawable}:${texture}`;
+    assert.equal(seen.has(key), false, `duplicate wear ${key}`);
+    seen.add(key);
+  }
+  assert.equal(Object.keys(MALE_PACK).length, 11);
+});
+
+test('capalot is owner-gated', () => {
+  const capalot = catalog.chains.icebox_capalot;
+  assert.equal(canCraftGrade(capalot, 3)[0], false);
+  assert.equal(canCraftGrade(capalot, 4)[0], true);
 });
 
 test('craft rejects missing gold', () => {
-  const cuban = catalog.chains.icebox_cuban_gold;
-  const [ok, reason] = canCraft(cuban, 4, { icebox_gold_bar: 1, icebox_chain_links: 2, icebox_polish: 1 });
+  const trapper = catalog.chains.icebox_trapper;
+  const [ok, reason] = canCraft(trapper, 4, { icebox_gold_bar: 1, icebox_chain_links: 1 });
   assert.equal(ok, false);
   assert.equal(reason, 'ingredients');
 });
 
 test('craft accepts a full bench', () => {
-  const cuban = catalog.chains.icebox_cuban_gold;
-  const [ok] = canCraft(cuban, 0, { icebox_gold_bar: 3, icebox_chain_links: 2, icebox_polish: 1 });
+  const trapper = catalog.chains.icebox_trapper;
+  const [ok] = canCraft(trapper, 0, { icebox_gold_bar: 2, icebox_chain_links: 1 });
   assert.equal(ok, true);
 });
 
 test('buy payload is whitelisted and qty-locked', () => {
-  assert.equal(validateBuy({ id: 'icebox_cuban_gold', count: 1 })[0], true);
+  assert.equal(validateBuy({ id: 'icebox_trapper', count: 1 })[0], true);
   assert.equal(validateBuy({ id: 'weapon_pistol', count: 1 })[1], 'unknown_piece');
-  assert.equal(validateBuy({ id: 'icebox_cuban_gold', count: 99 })[1], 'count');
-  assert.equal(validateBuy({ id: 'icebox_cuban_gold', count: 1.5 })[1], 'count');
-  assert.equal(validateBuy({ id: 'icebox_cuban_gold', count: -1 })[1], 'count');
+  assert.equal(validateBuy({ id: 'icebox_trapper', count: 99 })[1], 'count');
+  assert.equal(validateBuy({ id: 'icebox_trapper', count: 1.5 })[1], 'count');
+  assert.equal(validateBuy({ id: 'icebox_trapper', count: -1 })[1], 'count');
   assert.equal(validateBuy(null)[0], false);
 });
 
 test('fence pays a fraction and rejects worthless math', () => {
-  const cuban = catalog.chains.icebox_cuban_gold;
-  assert.equal(fencePrice(cuban), Math.floor(12500 * 0.34));
-  const diamond = catalog.chains.icebox_diamond_cuban;
-  const infused = fencePrice(diamond, 'icebox_diamond');
+  const trapper = catalog.chains.icebox_trapper;
+  assert.equal(fencePrice(trapper), Math.floor(9800 * 0.34));
+  const sharky = catalog.chains.icebox_sharky;
+  const infused = fencePrice(sharky, 'icebox_diamond');
   const expected = Math.floor(Math.floor(54000 * 1.18) * 0.34);
   assert.equal(infused, expected);
 });
@@ -267,6 +302,15 @@ test('every catalog item has an inventory and nui image', () => {
     const nui = join(root, 'html/assets/items', `${name}.png`);
     assert.ok(readFileSync(inv).slice(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), inv);
     assert.ok(readFileSync(nui).slice(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), nui);
+  }
+});
+
+test('chain inventory icons are small transparent PNGs', () => {
+  for (const [id, chain] of Object.entries(catalog.chains)) {
+    if (chain.category !== 'chain') continue;
+    const buf = readFileSync(join(root, 'install/images', `${id}.png`));
+    assert.ok(buf.length < 45000, `${id} is ${buf.length} bytes`);
+    assert.equal(buf[25], 6, `${id} should be RGBA`);
   }
 });
 
