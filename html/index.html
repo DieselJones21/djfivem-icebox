@@ -6,40 +6,37 @@
   <title>Rebel Roleplay Icebox</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=owned2" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=atelier2" />
 </head>
 <body>
   <div id="app" class="hidden" data-view="showroom">
-    <div class="frost"></div>
     <aside class="rail">
       <div class="brand">
-        <img src="assets/logo.svg" alt="Rebel Icebox" class="logo" />
-        <div>
-          <p class="eyebrow">Rebel Roleplay</p>
-          <h1>ICEBOX</h1>
-          <p class="tagline">Los Santos luxury ice</p>
-        </div>
+        <img src="assets/rebel-logo.png" alt="Rebel Roleplay" class="wordmark" />
+        <p class="eyebrow">Rebel Roleplay</p>
+        <h1>Icebox</h1>
+        <p class="tagline">Fine jewelry · Los Santos</p>
       </div>
       <nav id="nav">
         <button class="nav-btn active" data-view="showroom">
-          <span>Showroom</span>
-          <small>Retail ice</small>
+          <span>The Case</span>
+          <small>Ready to wear</small>
         </button>
         <button class="nav-btn" data-view="workshop" data-employee="true">
-          <span>Workshop</span>
-          <small>Craft & infuse</small>
+          <span>Atelier</span>
+          <small>Orders &amp; bench</small>
         </button>
         <button class="nav-btn" data-view="supplier" data-supplier="true">
-          <span>Supplier</span>
-          <small>Buy materials</small>
+          <span>Metals</span>
+          <small>Wholesale stock</small>
         </button>
         <button class="nav-btn" data-view="owned">
-          <span>My Pieces</span>
-          <small>Wear & manage</small>
+          <span>My Collection</span>
+          <small>Wear &amp; manage</small>
         </button>
         <button class="nav-btn" data-view="fence" data-fence="true">
-          <span>Quiet Buyer</span>
+          <span>Private Buyer</span>
           <small>Snatched only</small>
         </button>
       </nav>
@@ -48,14 +45,14 @@
         <div class="equipped-row" data-slot="chain">No chain</div>
         <div class="equipped-row" data-slot="watch">No watch</div>
       </div>
-      <div class="job-pill" id="jobPill">Civilian</div>
+      <div class="job-pill" id="jobPill">Guest</div>
     </aside>
 
     <main class="stage">
       <header class="top">
         <div>
-          <p class="eyebrow" id="viewEyebrow">Showroom</p>
-          <h2 id="viewTitle">Pick your ice</h2>
+          <p class="eyebrow" id="viewEyebrow">The Case</p>
+          <h2 id="viewTitle">The collection</h2>
         </div>
         <div class="top-actions">
           <div class="filters" id="filters"></div>
@@ -63,17 +60,18 @@
         </div>
       </header>
 
+      <section class="orders hidden" id="orders"></section>
+
       <section class="grid-wrap">
         <div class="cards" id="cards"></div>
         <article class="detail" id="detail">
           <div class="preview" id="preview">
-            <div class="orb"></div>
             <img class="preview-img hidden" id="previewImg" alt="" />
-            <div class="chain-glyph" id="glyph">◆</div>
+            <div class="chain-glyph" id="glyph">◇</div>
           </div>
-          <p class="rarity" id="detailRarity">Iced</p>
-          <h3 id="detailTitle">Select a piece</h3>
-          <p class="copy" id="detailCopy">Browse the case. Every piece is serialized at the bench.</p>
+          <p class="rarity" id="detailRarity">Select</p>
+          <h3 id="detailTitle">A piece from the case</h3>
+          <p class="copy" id="detailCopy">Every Icebox chain is cut, set, and serialized in-house for Rebel Roleplay.</p>
           <ul class="meta" id="detailMeta"></ul>
           <div class="price-row">
             <span class="price" id="detailPrice">$0</span>
@@ -86,6 +84,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=owned2"></script>
+  <script src="app.js?v=atelier2"></script>
 </body>
 </html>

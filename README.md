@@ -1,18 +1,18 @@
 # Icebox (`dj-icebox`)
 
-Rebel Roleplay jewelry business for **qbx_core**, **ox_lib**, **ox_inventory**, and **ox_target**.
+Rebel Roleplay jewelry business for **qbx_core**, **ox_lib**, **ox_inventory**, **ox_target**, and **[interact](https://github.com/darktrovx/interact)** (Darktrov).
 
 ## What you get
 
+- Rebel Roleplay branded Icebox atelier NUI — collections (Nameplates, Medallions, Layered Cubans, Timepieces), long descriptions, stocked-only sales
 - Icebox job (Apprentice → Owner) with duty, vault, showcase stash, and boss menu
-- **Player-owned stock**: employees buy materials, craft pieces, and put them in the showcase. Customers only buy what is in the case — nothing auto-restocks
-- Separate dock **supplier** for metals and stones (Icebox job only, not at the store)
-- Workshop NUI: unique recipes per piece, batch craft (up to 5), or pay a rush fee to skip materials
+- **Player-owned stock**: employees buy materials, place bench orders, collect when ready, and put pieces in the showcase. Customers only buy what is in the case
+- Bench **pickup timers** per piece, with **expedite** cash to finish remaining wait
+- Separate dock **supplier** for metals and stones (Icebox job only)
+- **Interact** (E prompt) for in-store points: cases, workshop, vault, clerk ped, clock-in. **ox_target / third-eye** only for snatch and the diamond tester
 - Wearable male Icebox chains (component 7 drawables 278–287) plus watches
-- ox_target snatch on players who are actually wearing a chain
 - Fence ped that only buys snatched (`hot`) pieces
-- Diamond tester to inspect someone else's neck
-- Server-side anti-exploit: distance, job/duty, rate limits, catalog whitelist, craft/snatch tokens, money/item rollback
+- Server-side anti-exploit: distance, job/duty, rate limits, catalog whitelist, snatch tokens, money/item rollback
 
 ## Wearables
 
@@ -59,9 +59,10 @@ Snatched pieces are flagged `hot` and cannot be worn (`Config.Wear.allowHot = fa
 2. Merge `install/job.lua` into `qbx_core/shared/jobs.lua`.
 3. Merge `install/items.lua` into `ox_inventory/data/items.lua` (replace any old Icebox chain names — vanilla placeholders are gone).
 4. Copy `install/images/*.png` into `ox_inventory/web/images/`. Chain icons are small transparent cutouts of the pack photos.
-5. Add to `server.cfg` **after** ox_lib, qbx_core, ox_inventory, ox_target. Start the clothing pack first:
+5. Add to `server.cfg` **after** ox_lib, qbx_core, ox_inventory, ox_target, and **interact**:
 
 ```cfg
+ensure interact
 ensure icebox_chains
 ensure dj-icebox
 ```
@@ -84,28 +85,28 @@ Society payouts auto-detect `Renewed-Banking`, `qb-banking`, or `fd_banking`. Bo
 
 Nothing appears in the showroom until Icebox employees put a finished piece in the **Showcase Stock** stash (`icebox_showcase`). Buying a chain takes that exact item (serial included) out of the case. If the case is empty, the UI shows out of stock.
 
-1. On-duty Icebox goes to the **supplier ped** at the docks (job blip: Icebox Supplier) and buys gold, silver, platinum, diamonds, rubies, links, and polish with **personal cash**.
-2. Back at the **workshop**, craft 1–5 of a piece in one session. Each chain has its own recipe. Batch time is `base + (count-1) * base * 0.55`, not a full 5× wait.
-3. **Rush craft** skips materials and charges `prices.rush` cash on finish. Still requires the bench, job, grade, and craft time. Server computes the price — the NUI never sends it.
-4. Put finished pieces into **Showcase Stock**. Customers cop them from the showroom / clerk.
+1. On-duty Icebox goes to the **supplier ped** at the docks and buys gold, silver, platinum, diamonds, rubies, links, and polish with **personal cash**.
+2. At the **atelier**, place an order for 1–5 of a piece. Materials (or a rush fee) are taken immediately. Each piece has its own recipe and `pickupWait` in seconds. Rush also cuts wait to 40%.
+3. Walk away. When the timer hits zero, **Collect**. Pay **Expedite** cash to skip remaining wait — price is computed on the server from time left.
+4. Put finished pieces into **Showcase Stock**. Customers buy them from the case / clerk.
 
-| Who | ox_target | Result |
+| Who | Prompt | Result |
 | --- | --- | --- |
-| Anyone | Browse Icebox | Showroom UI; cash buy **only if stocked** |
-| Icebox employee | Duty | Clock in/out |
-| On-duty employee | Workshop | Batch craft, rush craft, infuse |
-| On-duty employee | Icebox Supplier (docks) | Buy crafting materials |
-| On-duty employee | Vault / Showcase | ox_inventory stashes |
-| Boss grade | Management | qbx_management |
-| Anyone with a worn chain | Use chain item | Toggle wear |
-| Anyone | Snatch Chain on a player | Skill check, then steal worn chain as hot |
-| Anyone with hot ice | Quiet buyer ped | Fence for a cut of retail |
-| Anyone with `icebox_tester` | Test Chain | Clean vs snatched |
+| Anyone | Interact: Browse the case / Speak with Icebox | Showroom UI; cash buy **only if stocked** |
+| Icebox employee | Interact: Clock in / out | Duty |
+| On-duty employee | Interact: Workshop bench | Place orders, expedite, collect, infuse |
+| On-duty employee | Interact: Icebox supplier | Buy crafting materials |
+| On-duty employee | Interact: Vault / Showcase | ox_inventory stashes |
+| Boss grade | Interact: Management | qbx_management |
+| Anyone | Third-eye: Snatch Chain | Skill check, steal worn chain as hot |
+| Anyone with `icebox_tester` | Third-eye: Test Chain | Clean vs snatched |
+| Anyone with hot ice | Interact: Quiet buyer | Fence for a cut of retail |
 
 ## Anti-exploit
 
 - Prices, recipes, and payouts never come from the client
-- Craft and snatch use one-time server tokens and reject instant completes
+- Craft orders persist on the player and reject pickup before `readyAt`
+- Snatch uses one-time server tokens and rejects instant completes
 - Every money/item action re-checks distance, job, duty, and inventory
 - Failed `AddItem` after a payment or material remove is refunded
 - Rate limits on UI, buy, craft, fence, equip, snatch, and supplier

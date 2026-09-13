@@ -43,6 +43,8 @@ local function chainPublic(chain)
         gradeRequired = chain.gradeRequired,
         craftDuration = chain.craftDuration,
         ingredients = chain.ingredients,
+        collection = chain.collection,
+        pickupWait = chain.pickupWait,
         prices = {
             retail = IceboxLogic.retailPrice(chain),
             rush = IceboxLogic.rushPrice(chain, 1),
@@ -172,6 +174,85 @@ local function restockShowcase(itemName, meta)
     ox_inventory:AddItem(Config.Inventory.showcaseId, itemName, 1, meta)
 end
 
+local ORDERS_META = 'iceboxOrders'
+
+local function formatWait(sec)
+    sec = math.max(0, math.floor(tonumber(sec) or 0))
+    if sec < 60 then return ('%ss'):format(sec) end
+    local m = math.floor(sec / 60)
+    local s = sec % 60
+    if s == 0 then return ('%sm'):format(m) end
+    return ('%sm %ss'):format(m, s)
+end
+
+local function loadOrders(ply)
+    local meta = ply.PlayerData.metadata and ply.PlayerData.metadata[ORDERS_META]
+    local out = {}
+    if type(meta) ~= 'table' then return out end
+    if #meta > 0 then
+        for i = 1, #meta do
+            if type(meta[i]) == 'table' and meta[i].id then
+                out[#out + 1] = meta[i]
+            end
+        end
+        return out
+    end
+    for _, order in pairs(meta) do
+        if type(order) == 'table' and order.id then
+            out[#out + 1] = order
+        end
+    end
+    return out
+end
+
+local function saveOrders(ply, orders)
+    ply.Functions.SetMetaData(ORDERS_META, orders)
+end
+
+local function findOrder(orders, orderId)
+    for i = 1, #orders do
+        if orders[i].id == orderId then
+            return orders[i], i
+        end
+    end
+    return nil
+end
+
+local function publicOrders(ply)
+    local now = os.time()
+    local out = {}
+    local list = loadOrders(ply)
+    for i = 1, #list do
+        local order = list[i]
+        local chain = IceboxCatalog.get(order.chainId)
+        if chain then
+            local remaining = math.max(0, (order.readyAt or 0) - now)
+            local total = math.max(1, (order.readyAt or now) - (order.startedAt or now))
+            out[#out + 1] = {
+                id = order.id,
+                chainId = chain.id,
+                label = chain.label,
+                count = order.count or 1,
+                readyAt = order.readyAt,
+                startedAt = order.startedAt,
+                remaining = remaining,
+                waitSeconds = total,
+                ready = remaining <= 0,
+                skipMaterials = order.skipMaterials == true,
+                expeditePrice = IceboxLogic.expeditePrice(
+                    chain,
+                    order.count or 1,
+                    remaining,
+                    total,
+                    order.skipMaterials,
+                    Config.Craft.minExpedite
+                ),
+            }
+        end
+    end
+    return out
+end
+
 local function craftFailReason(reason)
     if reason == 'unknown_piece' then return 'unknown_piece' end
     if reason == 'count' then return 'invalid_count' end
@@ -253,6 +334,23 @@ local function buildMetadata(chain, opts)
         description = opts.hot and (('%s %s'):format(Config.Snatch.hotLabel, chain.label)) or chain.label,
         label = opts.hot and (('%s %s'):format(Config.Snatch.hotLabel, chain.label)) or nil,
     }
+end
+
+local function giveCrafted(source, chain, count)
+    local serials = {}
+    local added = 0
+    for _ = 1, count do
+        if added > 0 and not ox_inventory:CanCarryItem(source, chain.item, 1) then
+            break
+        end
+        local meta = buildMetadata(chain)
+        if not ox_inventory:AddItem(source, chain.item, 1, meta) then
+            break
+        end
+        added = added + 1
+        serials[#serials + 1] = meta.serial
+    end
+    return added, serials
 end
 
 local function applyWornMetadata(src, slotId, slot, worn)
@@ -436,6 +534,9 @@ lib.callback.register('dj-icebox:server:uiData', function(source, view)
         supplierCatalog = IceboxCatalog.listMaterials(),
         stock = showcaseStock(),
         owned = ownedPieces(source),
+        orders = publicOrders(ply),
+        serverNow = os.time(),
+        collections = IceboxCatalog.collections,
         business = IceboxCatalog.data.business,
         requireDuty = Config.RequireDuty,
         wearEnabled = Config.Wear.enabled,
@@ -479,7 +580,9 @@ lib.callback.register('dj-icebox:server:craftStart', function(source, payload)
     if not IceboxSecurity.near(source, Config.Locations.workshop.coords, Config.Craft.distance) then
         return fail(source, 'too_far')
     end
-    if IceboxSecurity.peekToken(source, 'craft') then
+
+    local orders = loadOrders(ply)
+    if #orders >= (Config.Craft.maxQueue or 5) then
         return fail(source, 'craft_busy')
     end
 
@@ -502,58 +605,16 @@ lib.callback.register('dj-icebox:server:craftStart', function(source, payload)
             return fail(source, why == 'grade' and 'grade_required' or 'missing_ingredients')
         end
     end
-    if not ox_inventory:CanCarryItem(source, chain.item, count) then
-        return fail(source, 'inventory_full')
-    end
 
-    local duration = IceboxLogic.craftDuration(chain, count, Config.Craft.minDurationMs, Config.Craft.batchScale)
-    local token = IceboxSecurity.issueToken(source, 'craft', {
-        id = chain.id,
-        count = count,
-        skipMaterials = skipMaterials,
-        duration = duration,
-        grade = grade,
-    })
-    return { ok = true, token = token, duration = duration, label = chain.label, count = count }
-end)
-
-lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
-    payload = payload or {}
-    local ok, ply = IceboxSecurity.player(source)
-    if not ok then return { ok = false, reason = 'exploit' } end
-    local isJob, grade = IceboxSecurity.job(ply, true)
-    if not isJob then return fail(source, 'duty_required') end
-    if not IceboxSecurity.near(source, Config.Locations.workshop.coords, Config.Craft.distance) then
-        IceboxSecurity.dropToken(source, 'craft')
-        return fail(source, 'too_far')
-    end
-    local pending = IceboxSecurity.peekToken(source, 'craft')
-    local minDur = pending and pending.payload and pending.payload.duration or Config.Craft.minDurationMs
-    local tokenOk, session, tokenReason = IceboxSecurity.consumeToken(source, 'craft', payload.token, minDur)
-    if not tokenOk then
-        return fail(source, tokenReason == 'too_fast' and 'exploit' or 'exploit')
-    end
-    local chain = IceboxCatalog.get(session.id)
-    if not chain then return fail(source, 'unknown_piece') end
-    if not IceboxLogic.canCraftGrade(chain, grade) then
-        return fail(source, 'grade_required')
-    end
-    local count = IceboxLogic.batchCount(session.count or 1, Config.Craft.maxBatch) or 1
-    local skipMaterials = IceboxLogic.wantsRush(session.skipMaterials)
+    local waitSec = IceboxLogic.pickupWait(
+        chain,
+        count,
+        skipMaterials,
+        Config.Craft.minWait,
+        Config.Craft.rushWaitScale,
+        Config.Craft.batchScale
+    )
     local rushCost = skipMaterials and IceboxLogic.rushPrice(chain, count) or 0
-
-    if skipMaterials then
-        if not Config.Craft.rushEnabled then return fail(source, 'rush_disabled') end
-        if rushCost < 1 then return fail(source, 'unknown_piece') end
-    else
-        local counts = materialCounts(source, chain)
-        if not IceboxLogic.hasIngredients(chain, counts, count) then
-            return fail(source, 'missing_ingredients')
-        end
-    end
-    if not ox_inventory:CanCarryItem(source, chain.item, 1) then
-        return fail(source, 'inventory_full')
-    end
 
     if skipMaterials then
         if not exports.qbx_core:RemoveMoney(source, 'cash', rushCost, 'icebox-rush') then
@@ -563,35 +624,79 @@ lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
         return fail(source, 'missing_ingredients')
     end
 
-    local serials = {}
-    local added = 0
-    for _ = 1, count do
-        if added > 0 and not ox_inventory:CanCarryItem(source, chain.item, 1) then
-            break
-        end
-        local meta = buildMetadata(chain)
-        if not ox_inventory:AddItem(source, chain.item, 1, meta) then
-            break
-        end
-        added = added + 1
-        serials[#serials + 1] = meta.serial
+    local now = os.time()
+    local order = {
+        id = IceboxLogic.newSerial('ORD'),
+        chainId = chain.id,
+        count = count,
+        skipMaterials = skipMaterials,
+        startedAt = now,
+        readyAt = now + waitSec,
+        grade = grade,
+    }
+    orders[#orders + 1] = order
+    saveOrders(ply, orders)
+    notify(source, 'order_placed', 'success', chain.label, formatWait(waitSec))
+    return {
+        ok = true,
+        order = order,
+        waitSeconds = waitSec,
+        label = chain.label,
+        count = count,
+        orders = publicOrders(ply),
+        materials = allMaterialCounts(source),
+        serverNow = now,
+    }
+end)
+
+local function pickupOrder(source, payload)
+    payload = payload or {}
+    if not IceboxSecurity.rateLimit(source, 'pickup', Config.RateLimits.pickup or 800) then
+        return fail(source, 'slow_down')
+    end
+    local valid = IceboxLogic.validateOrder(payload)
+    if not valid then return fail(source, 'exploit') end
+    local ok, ply = IceboxSecurity.player(source)
+    if not ok then return { ok = false, reason = 'exploit' } end
+    local isJob, grade = IceboxSecurity.job(ply, true)
+    if not isJob then return fail(source, 'duty_required') end
+    if not IceboxSecurity.near(source, Config.Locations.workshop.coords, Config.Craft.distance) then
+        return fail(source, 'too_far')
     end
 
+    local orders = loadOrders(ply)
+    local order, index = findOrder(orders, payload.id)
+    if not order then return fail(source, 'unknown_piece') end
+    if os.time() < (order.readyAt or 0) then
+        return fail(source, 'order_not_ready')
+    end
+    local chain = IceboxCatalog.get(order.chainId)
+    if not chain then return fail(source, 'unknown_piece') end
+    if not IceboxLogic.canCraftGrade(chain, grade) then
+        return fail(source, 'grade_required')
+    end
+    local count = order.count or 1
+    if not ox_inventory:CanCarryItem(source, chain.item, 1) then
+        return fail(source, 'inventory_full')
+    end
+
+    local added, serials = giveCrafted(source, chain, count)
+    if added == 0 then
+        return fail(source, 'inventory_full')
+    end
+    table.remove(orders, index)
     if added < count then
-        local leftover = count - added
-        if skipMaterials then
-            local refund = IceboxLogic.rushPrice(chain, leftover)
-            if refund > 0 then
-                exports.qbx_core:AddMoney(source, 'cash', refund, 'icebox-rush-refund')
-            end
-        else
-            refundIngredients(source, IceboxLogic.scaledIngredients(chain, leftover))
-        end
-        if added == 0 then
-            return fail(source, 'inventory_full')
-        end
+        orders[#orders + 1] = {
+            id = IceboxLogic.newSerial('ORD'),
+            chainId = chain.id,
+            count = count - added,
+            skipMaterials = order.skipMaterials,
+            startedAt = order.startedAt,
+            readyAt = os.time(),
+            grade = grade,
+        }
     end
-
+    saveOrders(ply, orders)
     if added > 1 then
         notify(source, 'craft_success_batch', 'success', added, chain.label)
     else
@@ -603,8 +708,82 @@ lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
         serials = serials,
         count = added,
         owned = ownedPieces(source),
+        orders = publicOrders(ply),
         materials = allMaterialCounts(source),
+        serverNow = os.time(),
     }
+end
+
+lib.callback.register('dj-icebox:server:craftPickup', pickupOrder)
+
+lib.callback.register('dj-icebox:server:craftExpedite', function(source, payload)
+    payload = payload or {}
+    if not IceboxSecurity.rateLimit(source, 'expedite', Config.RateLimits.expedite or 800) then
+        return fail(source, 'slow_down')
+    end
+    local valid = IceboxLogic.validateOrder(payload)
+    if not valid then return fail(source, 'exploit') end
+    local ok, ply = IceboxSecurity.player(source)
+    if not ok then return { ok = false, reason = 'exploit' } end
+    local isJob = IceboxSecurity.job(ply, true)
+    if not isJob then return fail(source, 'duty_required') end
+    if not IceboxSecurity.near(source, Config.Locations.workshop.coords, Config.Craft.distance) then
+        return fail(source, 'too_far')
+    end
+    if not Config.Craft.rushEnabled then return fail(source, 'rush_disabled') end
+
+    local orders = loadOrders(ply)
+    local order = findOrder(orders, payload.id)
+    if not order then return fail(source, 'unknown_piece') end
+    local now = os.time()
+    local remaining = math.max(0, (order.readyAt or 0) - now)
+    if remaining <= 0 then
+        return fail(source, 'already_ready')
+    end
+    local chain = IceboxCatalog.get(order.chainId)
+    if not chain then return fail(source, 'unknown_piece') end
+    local total = math.max(1, (order.readyAt or now) - (order.startedAt or now))
+    local price = IceboxLogic.expeditePrice(
+        chain,
+        order.count or 1,
+        remaining,
+        total,
+        order.skipMaterials,
+        Config.Craft.minExpedite
+    )
+    if price < 1 then return fail(source, 'unknown_piece') end
+    if not exports.qbx_core:RemoveMoney(source, 'cash', price, 'icebox-expedite') then
+        return fail(source, 'cannot_afford')
+    end
+    order.readyAt = now
+    order.expedited = true
+    saveOrders(ply, orders)
+    notify(source, 'expedite_success', 'success', chain.label)
+    return {
+        ok = true,
+        orders = publicOrders(ply),
+        serverNow = now,
+    }
+end)
+
+--- Legacy name: collect a ready order.
+lib.callback.register('dj-icebox:server:craftFinish', function(source, payload)
+    payload = payload or {}
+    local ok, ply = IceboxSecurity.player(source)
+    if not ok then return { ok = false, reason = 'exploit' } end
+    if type(payload.id) ~= 'string' or payload.id == '' then
+        local listed = publicOrders(ply)
+        local readyId
+        for i = 1, #listed do
+            if listed[i].ready then
+                readyId = listed[i].id
+                break
+            end
+        end
+        if not readyId then return fail(source, 'order_not_ready') end
+        payload.id = readyId
+    end
+    return pickupOrder(source, payload)
 end)
 
 lib.callback.register('dj-icebox:server:infuse', function(source, payload)

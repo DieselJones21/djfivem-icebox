@@ -58,14 +58,28 @@ Config.Showroom = {
 
 Config.Craft = {
     distance = 4.0,
-    --- Hard cap so a stalled progress bar cannot be completed instantly by a cheater.
+    --- Kept for legacy math; pickup uses pickupWait seconds on each piece.
     minDurationMs = 2500,
-    --- One workshop session at a time. Count is how many pieces that session cuts.
-    maxQueue = 1,
+    --- Open bench orders a jeweler can have waiting at once.
+    maxQueue = 5,
     maxBatch = 5,
-    --- Extra pieces add this fraction of the base craft time each (not a full 5x wait).
+    --- Extra pieces add this fraction of the base wait each (not a full 5x wait).
     batchScale = 0.55,
     rushEnabled = true,
+    --- Floor wait even on rush / cheap pieces (seconds).
+    minWait = 45,
+    --- Rush (skip mats) also cuts remaining wait to this fraction.
+    rushWaitScale = 0.4,
+    minExpedite = 400,
+}
+
+--- Darktrov Interact for in-store points and peds. ox_target stays on snatch only.
+--- If `interact` is not started, store points fall back to ox_target.
+Config.Interact = {
+    enabled = true,
+    resource = 'interact',
+    distance = 8.0,
+    interactDst = 1.55,
 }
 
 Config.Supplier = {
@@ -86,6 +100,8 @@ Config.RateLimits = {
     snatchFinish = 1000,
     duty = 1500,
     supplier = 800,
+    expedite = 800,
+    pickup = 800,
 }
 
 --- Interaction radius used for every server distance check (added on top of location distance).

@@ -1,5 +1,8 @@
 local zones = {}
 local peds = {}
+local interactIds = {}
+local pedTargets = {}
+local warnedFallback = false
 
 local function job()
     return QBX.PlayerData and QBX.PlayerData.job or {}
@@ -15,25 +18,80 @@ local function onDuty()
     return j.name == Config.JobName and (not Config.RequireDuty or j.onduty)
 end
 
-local function addZone(name, loc, options)
-    if not loc then return end
+local function isBoss()
+    local j = job()
+    return j.name == Config.JobName and j.isboss
+end
+
+local function interactResource()
+    return (Config.Interact and Config.Interact.resource) or 'interact'
+end
+
+local function useInteract()
+    return Config.Interact and Config.Interact.enabled ~= false and GetResourceState(interactResource()) == 'started'
+end
+
+local function interactOpts(options)
+    local out = {}
+    for i, opt in ipairs(options) do
+        out[i] = {
+            label = opt.label,
+            canInteract = opt.canInteract,
+            action = opt.action or opt.onSelect,
+        }
+    end
+    return out
+end
+
+local function targetOpts(options, radius)
+    local cloned = {}
+    for index, opt in ipairs(options) do
+        local copy = {}
+        for k, v in pairs(opt) do
+            copy[k] = v
+        end
+        copy.onSelect = copy.onSelect or copy.action
+        copy.action = nil
+        copy.distance = copy.distance or ((radius or 1.6) + 0.6)
+        cloned[index] = copy
+    end
+    return cloned
+end
+
+local function addPoint(id, loc, name, options, radius)
     local points = IceboxLogic.locationCoords(loc)
     if #points == 0 then return end
-    local radius = loc.radius or 1.6
+    radius = radius or 1.6
+    local dist = (Config.Interact and Config.Interact.distance) or 8.0
+    local interactDst = math.max((Config.Interact and Config.Interact.interactDst) or 1.55, radius)
+    if useInteract() then
+        for i = 1, #points do
+            local iid = ('%s_%s'):format(id, i)
+            pcall(function()
+                exports[interactResource()]:AddInteraction({
+                    coords = vec3(points[i].x, points[i].y, points[i].z),
+                    distance = dist,
+                    interactDst = interactDst,
+                    id = iid,
+                    name = name,
+                    options = interactOpts(options),
+                })
+            end)
+            interactIds[#interactIds + 1] = iid
+        end
+        return
+    end
+    if not warnedFallback then
+        warnedFallback = true
+        print('^3[Icebox] interact is not started — store points are using ox_target. Start darktrovx/interact for E prompts. Snatch still uses third-eye.^0')
+    end
     for i = 1, #points do
-        local cloned = {}
-        for index, opt in ipairs(options) do
-            local copy = {}
-            for k, v in pairs(opt) do
-                copy[k] = v
-            end
+        local cloned = targetOpts(options, radius)
+        for _, copy in ipairs(cloned) do
             if copy.name then
                 copy.name = ('%s_%s'):format(copy.name, i)
             end
-            copy.distance = copy.distance or (radius + 0.6)
-            cloned[index] = copy
         end
-        --- Spheres work more reliably inside MLOs than thin rotated boxes.
         zones[#zones + 1] = exports.ox_target:addSphereZone({
             coords = vec3(points[i].x, points[i].y, points[i].z),
             radius = radius,
@@ -41,6 +99,29 @@ local function addZone(name, loc, options)
             options = cloned,
         })
     end
+end
+
+local function attachPed(key, ped, name, options)
+    if not ped or pedTargets[key] then return end
+    if useInteract() then
+        local iid = ('icebox_ped_%s'):format(key)
+        pcall(function()
+            exports[interactResource()]:AddLocalEntityInteraction({
+                entity = ped,
+                id = iid,
+                name = name,
+                distance = (Config.Interact and Config.Interact.distance) or 8.0,
+                interactDst = (Config.Interact and Config.Interact.interactDst) or 1.55,
+                ignoreLos = true,
+                offset = vec3(0.0, 0.0, 0.15),
+                options = interactOpts(options),
+            })
+        end)
+        pedTargets[key] = { interact = true, id = iid, entity = ped }
+        return
+    end
+    exports.ox_target:addLocalEntity(ped, targetOpts(options, 1.6))
+    pedTargets[key] = { interact = false, entity = ped }
 end
 
 local function spawnPed(key, data)
@@ -131,126 +212,114 @@ local function refreshSupplierBlip()
     end
 end
 
-local function setupTargets()
-    addZone('duty', Config.Locations.duty, {
+local function setupStore()
+    addPoint('icebox_duty', Config.Locations.duty, 'Icebox', {
         {
             name = 'icebox_duty',
             icon = 'fa-solid fa-user-clock',
-            label = 'Icebox Duty',
+            label = 'Clock in / out',
             canInteract = isIcebox,
-            onSelect = function()
+            action = function()
                 lib.callback.await('dj-icebox:server:toggleDuty', false)
             end,
         },
-    })
+    }, Config.Locations.duty.radius or 1.6)
 
-    addZone('showroom', Config.Locations.showroom, {
+    addPoint('icebox_showroom', Config.Locations.showroom, 'Icebox', {
         {
             name = 'icebox_showroom',
             icon = 'fa-solid fa-gem',
-            label = 'Browse Icebox',
-            onSelect = function()
+            label = 'Browse the case',
+            action = function()
                 IceboxNui.open('showroom')
             end,
         },
-    })
+    }, Config.Locations.showroom.radius or 1.8)
 
-    addZone('workshop', Config.Locations.workshop, {
+    addPoint('icebox_workshop', Config.Locations.workshop, 'Icebox', {
         {
             name = 'icebox_workshop',
             icon = 'fa-solid fa-hammer',
-            label = 'Icebox Workshop',
+            label = 'Workshop bench',
             canInteract = onDuty,
-            onSelect = function()
+            action = function()
                 IceboxNui.open('workshop')
             end,
         },
-    })
+    }, Config.Locations.workshop.radius or 1.8)
 
-    addZone('vault', Config.Locations.vault, {
+    addPoint('icebox_vault', Config.Locations.vault, 'Icebox', {
         {
             name = 'icebox_vault',
             icon = 'fa-solid fa-box-open',
-            label = 'Icebox Vault',
+            label = 'Open vault',
             canInteract = onDuty,
-            onSelect = function()
+            action = function()
                 exports.ox_inventory:openInventory('stash', Config.Inventory.vaultId)
             end,
         },
         {
             name = 'icebox_showcase',
             icon = 'fa-solid fa-store',
-            label = 'Showcase Stock',
+            label = 'Showcase stock',
             canInteract = onDuty,
-            onSelect = function()
+            action = function()
                 exports.ox_inventory:openInventory('stash', Config.Inventory.showcaseId)
             end,
         },
-    })
+    }, Config.Locations.vault.radius or 1.6)
 
-    addZone('boss', Config.Locations.boss, {
+    addPoint('icebox_boss', Config.Locations.boss, 'Icebox', {
         {
             name = 'icebox_boss',
             icon = 'fa-solid fa-briefcase',
-            label = 'Icebox Management',
-            canInteract = function()
-                local j = job()
-                return j.name == Config.JobName and j.isboss
-            end,
-            onSelect = function()
+            label = 'Management',
+            canInteract = isBoss,
+            action = function()
                 if GetResourceState('qbx_management') == 'started' then
                     exports.qbx_management:OpenBossMenu('job')
                 end
             end,
         },
-    })
+    }, Config.Locations.boss.radius or 1.6)
 
-    --- Fallback if the clerk ped has not streamed in yet.
-    addZone('clerk', {
-        coords = Config.Locations.clerk.coords,
-        radius = 1.6,
-    }, {
+    addPoint('icebox_clerk', { coords = Config.Locations.clerk.coords }, 'Icebox', {
         {
             name = 'icebox_clerk_zone',
             icon = 'fa-solid fa-gem',
-            label = 'Talk to Icebox',
-            onSelect = function()
+            label = 'Speak with Icebox',
+            action = function()
                 IceboxNui.open('showroom')
             end,
         },
-    })
+    }, 1.6)
 
-    addZone('fence', {
-        coords = Config.Locations.fence.coords,
-        radius = 1.8,
-    }, {
+    addPoint('icebox_fence', { coords = Config.Locations.fence.coords }, 'Quiet buyer', {
         {
             name = 'icebox_fence_zone',
             icon = 'fa-solid fa-sack-dollar',
             label = 'Sell snatched ice',
-            onSelect = function()
+            action = function()
                 IceboxNui.open('fence')
             end,
         },
-    })
+    }, 1.8)
 
     if Config.Supplier.enabled and Config.Locations.supplier and Config.Locations.supplier.enabled then
-        addZone('supplier', {
-            coords = Config.Locations.supplier.coords,
-            radius = 1.8,
-        }, {
+        addPoint('icebox_supplier', { coords = Config.Locations.supplier.coords }, 'Icebox supplier', {
             {
                 name = 'icebox_supplier_zone',
                 icon = 'fa-solid fa-boxes-stacked',
-                label = 'Buy Icebox materials',
+                label = 'Buy materials',
                 canInteract = onDuty,
-                onSelect = function()
+                action = function()
                     IceboxNui.open('supplier')
                 end,
             },
-        })
+        }, 1.8)
     end
 
+    --- Third-eye only: snatch and tester on other players.
     exports.ox_target:addGlobalPlayer({
         {
             name = 'icebox_snatch',
@@ -284,14 +353,6 @@ local function setupTargets()
     })
 end
 
-local pedTargets = {}
-
-local function attachPedTarget(key, ped, options)
-    if not ped or pedTargets[key] then return end
-    exports.ox_target:addLocalEntity(ped, options)
-    pedTargets[key] = true
-end
-
 local function nearby(loc, range)
     local point = IceboxLogic.locationCoords(loc)[1]
     if not point or not cache.ped then return false end
@@ -303,17 +364,15 @@ end
 CreateThread(function()
     setupBlips()
     refreshSupplierBlip()
-    setupTargets()
+    setupStore()
     while true do
         refreshSupplierBlip()
         if nearby(Config.Locations.clerk, 80.0) then
             local clerk = spawnPed('clerk', Config.Locations.clerk)
-            attachPedTarget('clerk', clerk, {
+            attachPed('clerk', clerk, 'Icebox', {
                 {
-                    name = 'icebox_clerk',
-                    icon = 'fa-solid fa-gem',
-                    label = 'Talk to Icebox',
-                    onSelect = function()
+                    label = 'Speak with Icebox',
+                    action = function()
                         IceboxNui.open('showroom')
                     end,
                 },
@@ -321,12 +380,10 @@ CreateThread(function()
         end
         if nearby(Config.Locations.fence, 80.0) then
             local fencePed = spawnPed('fence', Config.Locations.fence)
-            attachPedTarget('fence', fencePed, {
+            attachPed('fence', fencePed, 'Quiet buyer', {
                 {
-                    name = 'icebox_fence',
-                    icon = 'fa-solid fa-sack-dollar',
                     label = 'Sell snatched ice',
-                    onSelect = function()
+                    action = function()
                         IceboxNui.open('fence')
                     end,
                 },
@@ -334,13 +391,11 @@ CreateThread(function()
         end
         if Config.Supplier.enabled and nearby(Config.Locations.supplier, 80.0) then
             local supplierPed = spawnPed('supplier', Config.Locations.supplier)
-            attachPedTarget('supplier', supplierPed, {
+            attachPed('supplier', supplierPed, 'Icebox supplier', {
                 {
-                    name = 'icebox_supplier',
-                    icon = 'fa-solid fa-boxes-stacked',
-                    label = 'Buy Icebox materials',
+                    label = 'Buy materials',
                     canInteract = onDuty,
-                    onSelect = function()
+                    action = function()
                         IceboxNui.open('supplier')
                     end,
                 },
@@ -352,6 +407,21 @@ end)
 
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
+    if useInteract() then
+        local exp = exports[interactResource()]
+        for i = 1, #interactIds do
+            pcall(function()
+                exp:RemoveInteraction(interactIds[i])
+            end)
+        end
+        for _, info in pairs(pedTargets) do
+            if type(info) == 'table' and info.interact and info.id then
+                pcall(function()
+                    exp:RemoveLocalEntityInteraction(info.entity, info.id)
+                end)
+            end
+        end
+    end
     for _, id in pairs(zones) do
         if type(id) == 'number' then
             pcall(function()
